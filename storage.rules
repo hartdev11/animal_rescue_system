@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isClinic() {
+      return request.auth != null;
+    }
+
+    match /cases/{caseId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth == null || isClinic();
+    }
+
+    match /case-updates/{caseId}/{fileName} {
+      allow read: if true;
+      allow write: if isClinic();
+    }
+
+    match /animals/{animalId}/{fileName} {
+      allow read: if true;
+      allow write: if isClinic();
+    }
+  }
+}

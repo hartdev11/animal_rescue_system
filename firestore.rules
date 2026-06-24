@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isClinic() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'clinic';
+    }
+
+    function ownsClinic(clinicId) {
+      return isClinic()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == clinicId;
+    }
+
+    // Users — clinic staff only, self-read
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Clinics — public read for province routing, clinic write own
+    match /clinics/{clinicId} {
+      allow read: if true;
+      allow write: if ownsClinic(clinicId);
+    }
+
+    // Cases — public create (reporters), clinic read/update assigned
+    match /cases/{caseId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if isClinic()
+        && resource.data.clinicId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId;
+      allow delete: if false;
+    }
+
+    // Case updates — clinic write, public read via case
+    match /caseUpdates/{updateId} {
+      allow read: if true;
+      allow create: if isClinic();
+      allow update, delete: if false;
+    }
+
+    // Timeline — clinic write, public read
+    match /caseTimeline/{eventId} {
+      allow read: if true;
+      allow create: if isClinic();
+      allow update, delete: if false;
+    }
+
+    // Animals — public read available, clinic manage own
+    match /animals/{animalId} {
+      allow read: if true;
+      allow create, update: if isClinic();
+      allow delete: if false;
+    }
+
+    // Counters — server/admin only (use Cloud Functions in production)
+    match /counters/{counterId} {
+      allow read, write: if false;
+    }
+  }
+}
