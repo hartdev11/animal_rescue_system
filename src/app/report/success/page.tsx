@@ -14,18 +14,18 @@ export default async function ReportSuccessPage({ searchParams }: SuccessPagePro
 
   return (
     <PublicLayout>
-      <div className="container mx-auto max-w-lg px-4 py-16 text-center">
-        <div className="text-6xl">✅</div>
-        <h1 className="mt-4 text-3xl font-bold">รายงานสำเร็จ</h1>
+      <div className="container mx-auto max-w-lg px-4 py-10 text-center sm:py-16">
+        <div className="text-5xl sm:text-6xl">✅</div>
+        <h1 className="mt-4 text-2xl font-bold sm:text-3xl">รายงานสำเร็จ</h1>
         {caseNumber && (
           <>
-            <p className="mt-4 text-muted-foreground">เลขเคสของคุณ</p>
-            <p className="mt-2 text-2xl font-mono font-bold text-emerald-700">
+            <p className="mt-4 text-sm text-muted-foreground sm:text-base">เลขเคสของคุณ</p>
+            <p className="mt-2 break-all text-xl font-mono font-bold text-emerald-700 sm:text-2xl">
               {caseNumber}
             </p>
             <Link
               href={`/case/${caseNumber}`}
-              className="mt-6 inline-block rounded-lg bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700"
+              className="mt-6 inline-block w-full rounded-lg bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700 sm:w-auto"
             >
               ติดตามสถานะเคส
             </Link>

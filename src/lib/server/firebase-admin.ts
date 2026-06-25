@@ -1,7 +1,14 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
+import {
+  getApps,
+  initializeApp,
+  cert,
+  applicationDefault,
+  type App,
+  type Credential,
+} from "firebase-admin/app";
 import { getFirestore, initializeFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
 
@@ -14,27 +21,70 @@ let app: App | undefined;
 let db: Firestore | undefined;
 let storage: Storage | undefined;
 
-export function isFirebaseAdminConfigured(): boolean {
-  const accountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  const gac = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  return Boolean(
-    (accountPath && fs.existsSync(path.resolve(process.cwd(), accountPath))) ||
-      (gac && fs.existsSync(path.resolve(process.cwd(), gac)))
-  );
+function readServiceAccountFromFile(filePath: string) {
+  const resolved = path.resolve(process.cwd(), filePath);
+  if (!fs.existsSync(resolved)) return null;
+  return JSON.parse(fs.readFileSync(resolved, "utf-8")) as {
+    project_id: string;
+    client_email: string;
+    private_key: string;
+  };
 }
 
-function getServiceAccountPath(): string {
+function getCredential(): Credential {
+  const jsonEnv = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (jsonEnv) {
+    const sa = JSON.parse(jsonEnv) as {
+      project_id: string;
+      client_email: string;
+      private_key: string;
+    };
+    return cert({
+      projectId: sa.project_id,
+      clientEmail: sa.client_email,
+      privateKey: sa.private_key,
+    });
+  }
+
   const accountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
   if (accountPath) {
-    const resolved = path.resolve(process.cwd(), accountPath);
-    if (fs.existsSync(resolved)) return resolved;
+    const sa = readServiceAccountFromFile(accountPath);
+    if (sa) {
+      return cert({
+        projectId: sa.project_id,
+        clientEmail: sa.client_email,
+        privateKey: sa.private_key,
+      });
+    }
   }
+
   const gac = process.env.GOOGLE_APPLICATION_CREDENTIALS;
   if (gac) {
-    const resolved = path.resolve(process.cwd(), gac);
-    if (fs.existsSync(resolved)) return resolved;
+    const sa = readServiceAccountFromFile(gac);
+    if (sa) {
+      return cert({
+        projectId: sa.project_id,
+        clientEmail: sa.client_email,
+        privateKey: sa.private_key,
+      });
+    }
   }
-  throw new Error("ตั้ง FIREBASE_SERVICE_ACCOUNT_PATH ใน .env.local");
+
+  return applicationDefault();
+}
+
+export function isFirebaseAdminConfigured(): boolean {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return true;
+
+  const accountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+  const gac = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (accountPath && fs.existsSync(path.resolve(process.cwd(), accountPath))) return true;
+  if (gac && fs.existsSync(path.resolve(process.cwd(), gac))) return true;
+
+  // Production: Firebase App Hosting / Cloud Run ใช้ ADC อัตโนมัติ
+  if (process.env.K_SERVICE || process.env.FIREBASE_CONFIG) return true;
+
+  return false;
 }
 
 function getApp(): App {
@@ -44,13 +94,8 @@ function getApp(): App {
     return app;
   }
 
-  const sa = JSON.parse(fs.readFileSync(getServiceAccountPath(), "utf-8"));
   app = initializeApp({
-    credential: cert({
-      projectId: sa.project_id,
-      clientEmail: sa.client_email,
-      privateKey: sa.private_key,
-    }),
+    credential: getCredential(),
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   });
   return app;

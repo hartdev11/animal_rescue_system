@@ -45,7 +45,7 @@ export function ClinicLoginForm() {
       clinicName: clinic.clinicName,
       province: clinic.province,
     });
-    router.push("/clinic/cases");
+    router.push("/clinic/dashboard");
   };
 
   return (

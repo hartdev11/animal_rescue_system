@@ -10,17 +10,17 @@ export const metadata = {
 export default function ReportPage() {
   return (
     <PublicLayout>
-      <div className="container mx-auto max-w-2xl px-4 py-8">
+      <div className="container mx-auto max-w-2xl px-3 py-6 sm:px-4 sm:py-8">
         <Link
           href="/"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground sm:mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
           กลับหน้าแรก
         </Link>
 
-        <h1 className="text-3xl font-bold">🚨 รายงานสัตว์บาดเจ็บ</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-bold sm:text-3xl">🚨 รายงานสัตว์บาดเจ็บ</h1>
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
           กรอกข้อมูลเพื่อแจ้งเหตุฉุกเฉิน — ไม่ต้องสมัครสมาชิก
         </p>
 

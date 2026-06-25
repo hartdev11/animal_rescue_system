@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -37,11 +38,19 @@ function buildCasesUrl(
 
 export function ClinicCasesList() {
   const session = getClinicSession();
+  const searchParams = useSearchParams();
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(Boolean(session));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<CaseStatus | "ALL">("ALL");
   const [showAllProvinces, setShowAllProvinces] = useState(false);
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status && status in CASE_STATUS_LABELS) {
+      setFilter(status as CaseStatus);
+    }
+  }, [searchParams]);
 
   const fetchCases = useCallback(async () => {
     if (!session) return [];

@@ -1,4 +1,4 @@
-import type { AnimalCondition, CaseStatus, TreatmentReportType } from "@/types";
+import type { AnimalCondition, CaseStatus, PlacementStatus, TreatmentReportType } from "@/types";
 
 export const APP_NAME = "Animal Rescue System";
 
@@ -141,6 +141,24 @@ export const TREATMENT_REPORT_OPTIONS: {
   { value: "CRITICAL", labelTh: "อาการหนัก / วิกฤต" },
   { value: "DECEASED", labelTh: "เสียชีวิต (ทนไม่ไหวแล้ว)" },
 ];
+
+export const PLACEMENT_STATUS_LABELS: Record<
+  PlacementStatus,
+  { th: string; description: string }
+> = {
+  AWAITING_SHELTER: {
+    th: "รอศูนย์พักพิง",
+    description: "ยังไม่มีศูนย์พักพิงหรือเจ้าของ",
+  },
+  IN_SHELTER: {
+    th: "อยู่ในศูนย์พักพิง",
+    description: "ส่งเข้าศูนย์แล้ว รอหาเจ้าของ",
+  },
+  HOMED: {
+    th: "ได้เจ้าของแล้ว",
+    description: "มีผู้รับเลี้ยงหรือเจ้าของแล้ว",
+  },
+};
 
 export const TREATMENT_REPORT_STYLES: Record<
   TreatmentReportType,

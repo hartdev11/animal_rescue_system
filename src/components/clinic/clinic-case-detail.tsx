@@ -4,20 +4,28 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageGallery } from "@/components/ui/image-gallery";
 import { getCaseImageUrls } from "@/lib/case-images";
-import { Loader2, MapPin, Phone, User } from "lucide-react";
+import { Loader2, MapPin, Phone, User, Warehouse, Home, Heart, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { CaseTimeline } from "@/components/tracking/case-timeline";
 import { CaseStatusBadge } from "@/components/tracking/case-status-badge";
 import { getClinicSession } from "@/components/clinic/clinic-login-form";
-import { ANIMAL_CONDITIONS, TREATMENT_REPORT_OPTIONS } from "@/lib/constants";
-import type { CaseStatus, CaseTimelineEvent, RescueCase, TreatmentReportType } from "@/types";
+import { ANIMAL_CONDITIONS, PLACEMENT_STATUS_LABELS, TREATMENT_REPORT_OPTIONS } from "@/lib/constants";
+import type {
+  CaseStatus,
+  CaseTimelineEvent,
+  PlacementStatus,
+  RescueCase,
+  TreatmentReportType,
+} from "@/types";
 
 interface CaseDetail extends Omit<RescueCase, "createdAt" | "updatedAt"> {
   createdAt: string;
   updatedAt: string;
   statusLabel: string;
+  placementLabel: string | null;
 }
 
 interface TimelineRow extends Omit<CaseTimelineEvent, "createdAt"> {
@@ -37,6 +45,14 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
     value: CaseStatus;
     label: string;
   } | null>(null);
+  const [recoveryOutcomes, setRecoveryOutcomes] = useState<
+    ("awaitingShelter" | "reporterAdopt")[]
+  >([]);
+  const [placementActions, setPlacementActions] = useState<
+    ("markInShelter" | "markHomed")[]
+  >([]);
+  const [outcomeNote, setOutcomeNote] = useState("");
+  const [placementNote, setPlacementNote] = useState("");
   const [note, setNote] = useState("");
   const [reportType, setReportType] = useState<TreatmentReportType>("STABLE");
   const [reportNote, setReportNote] = useState("");
@@ -51,6 +67,8 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
       case: CaseDetail;
       timeline: TimelineRow[];
       nextStatus: { value: CaseStatus; label: string } | null;
+      recoveryOutcomes: ("awaitingShelter" | "reporterAdopt")[];
+      placementActions: ("markInShelter" | "markHomed")[];
     }>;
   }, [caseNumber]);
 
@@ -59,10 +77,14 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
       case: CaseDetail;
       timeline: TimelineRow[];
       nextStatus: { value: CaseStatus; label: string } | null;
+      recoveryOutcomes: ("awaitingShelter" | "reporterAdopt")[];
+      placementActions: ("markInShelter" | "markHomed")[];
     }) => {
       setCaseData(data.case);
       setTimeline(data.timeline ?? []);
       setNextStatus(data.nextStatus ?? null);
+      setRecoveryOutcomes(data.recoveryOutcomes ?? []);
+      setPlacementActions(data.placementActions ?? []);
     },
     []
   );
@@ -160,6 +182,54 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
     setActionLoading(false);
   };
 
+  const handleRecoveryOutcome = async (
+    outcome: "awaitingShelter" | "reporterAdopt"
+  ) => {
+    setActionLoading(true);
+    setError(null);
+    const res = await fetch(`/api/clinic/cases/${encodeURIComponent(caseNumber)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "recoveryOutcome",
+        outcome,
+        note: outcomeNote.trim() || undefined,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error?.message ?? "บันทึกผลลัพธ์ไม่สำเร็จ");
+    } else {
+      setOutcomeNote("");
+      await loadCase();
+    }
+    setActionLoading(false);
+  };
+
+  const handlePlacementAction = async (
+    placementAction: "markInShelter" | "markHomed"
+  ) => {
+    setActionLoading(true);
+    setError(null);
+    const res = await fetch(`/api/clinic/cases/${encodeURIComponent(caseNumber)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "updatePlacement",
+        placementAction,
+        note: placementNote.trim() || undefined,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error?.message ?? "อัปเดตสถานะที่พักไม่สำเร็จ");
+    } else {
+      setPlacementNote("");
+      await loadCase();
+    }
+    setActionLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -191,7 +261,15 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
           <h1 className="text-2xl font-bold">รายละเอียดเคส</h1>
           <p className="font-mono text-emerald-700">{caseData.caseNumber}</p>
         </div>
-        <CaseStatusBadge status={caseData.status} className="text-sm px-3 py-1" />
+        <div className="flex flex-wrap items-center gap-2">
+          <CaseStatusBadge status={caseData.status} className="text-sm px-3 py-1" />
+          {caseData.placementStatus && (
+            <Badge className="bg-violet-100 text-violet-800">
+              {caseData.placementLabel ??
+                PLACEMENT_STATUS_LABELS[caseData.placementStatus as PlacementStatus].th}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -291,11 +369,98 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
               </>
             )}
 
+            {recoveryOutcomes.length > 0 && (
+              <div className="space-y-3 rounded-lg border border-emerald-300 bg-white p-3">
+                <h3 className="text-sm font-semibold text-emerald-900">
+                  ผลลัพธ์หลังฟื้นตัว — เลือกสถานะถัดไป
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  กรณีสัตว์เสียชีวิต ให้เลือกใน「รายงานอาการ」ด้านล่าง
+                </p>
+                <Textarea
+                  rows={2}
+                  placeholder="บันทึกเพิ่มเติม (ไม่บังคับ)"
+                  value={outcomeNote}
+                  onChange={(e) => setOutcomeNote(e.target.value)}
+                />
+                {recoveryOutcomes.includes("awaitingShelter") && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start border-amber-300 bg-amber-50 hover:bg-amber-100"
+                    onClick={() => handleRecoveryOutcome("awaitingShelter")}
+                    disabled={actionLoading}
+                  >
+                    <Warehouse className="mr-2 h-4 w-4 text-amber-700" />
+                    รอศูนย์พักพิง / ยังไม่ได้บ้าน
+                  </Button>
+                )}
+                {recoveryOutcomes.includes("reporterAdopt") && (
+                  <Button
+                    type="button"
+                    className="w-full justify-start bg-pink-600 hover:bg-pink-700"
+                    onClick={() => handleRecoveryOutcome("reporterAdopt")}
+                    disabled={actionLoading}
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    ส่งมอบให้ผู้แจ้งรับเลี้ยงต่อ
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {placementActions.length > 0 && (
+              <div className="space-y-3 rounded-lg border border-violet-200 bg-violet-50/80 p-3">
+                <h3 className="text-sm font-semibold text-violet-900">
+                  จัดการที่พักสัตว์
+                </h3>
+                <p className="text-xs text-violet-800">
+                  หรือจัดการทั้งหมดได้ที่{" "}
+                  <a href="/clinic/animals" className="font-medium underline">
+                    หน้ารอศูนย์พักพิง
+                  </a>
+                </p>
+                <Textarea
+                  rows={2}
+                  placeholder="เช่น ส่งไปที่ศูนย์ xxx..."
+                  value={placementNote}
+                  onChange={(e) => setPlacementNote(e.target.value)}
+                />
+                {placementActions.includes("markInShelter") && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-violet-300 bg-white"
+                    onClick={() => handlePlacementAction("markInShelter")}
+                    disabled={actionLoading}
+                  >
+                    <Warehouse className="mr-2 h-4 w-4" />
+                    บันทึก: ส่งเข้าศูนย์พักพิงแล้ว
+                  </Button>
+                )}
+                {placementActions.includes("markHomed") && (
+                  <Button
+                    type="button"
+                    className="w-full"
+                    onClick={() => handlePlacementAction("markHomed")}
+                    disabled={actionLoading}
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    ได้เจ้าของแล้ว
+                  </Button>
+                )}
+              </div>
+            )}
+
             {canReportTreatment && (
               <div className="space-y-3 rounded-lg border border-violet-200 bg-violet-50/80 p-3">
                 <h3 className="text-sm font-semibold text-violet-900">
                   รายงานอาการระหว่างรักษา
                 </h3>
+                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Skull className="h-3 w-3" />
+                  หากสัตว์เสียชีวิต ให้เลือก「เสียชีวิต」 — ระบบจะปิดเคสอัตโนมัติ
+                </p>
                 <div className="space-y-2">
                   <Label htmlFor="reportType">สภาพอาการล่าสุด</Label>
                   <select

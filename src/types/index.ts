@@ -45,6 +45,12 @@ export type AnimalCondition =
   | "EMERGENCY"
   | "OTHER";
 
+/** การจัดหาที่พักหลังรักษา */
+export type PlacementStatus =
+  | "AWAITING_SHELTER" // รอศูนย์พักพิง / ยังไม่ได้บ้าน
+  | "IN_SHELTER" // อยู่ในศูนย์พักพิงแล้ว
+  | "HOMED"; // ได้เจ้าของแล้ว
+
 export interface RescueCase {
   id: string;
   caseNumber: string;
@@ -63,6 +69,8 @@ export interface RescueCase {
   updatedAt: Date;
   acceptedAt?: Date;
   closedAt?: Date;
+  /** สถานะการจัดหาที่พัก — ใช้หลังฟื้นตัว */
+  placementStatus?: PlacementStatus | null;
 }
 
 export type TreatmentReportType = "STABLE" | "CRITICAL" | "DECEASED";

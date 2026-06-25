@@ -143,25 +143,27 @@ export function CaseTrackingLive({
   const statusStyles = CASE_STATUS_STYLES[caseData.status];
 
   return (
-    <div className="mt-8 space-y-6">
-      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-        <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
-        <span>อัปเดตอัตโนมัติ — ไม่ต้องรีเฟรช</span>
+    <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-2">
+        <div className="flex items-center gap-1.5">
+          <Radio className="h-3.5 w-3.5 shrink-0 animate-pulse text-emerald-500" />
+          <span>อัปเดตอัตโนมัติ — ไม่ต้องรีเฟรช</span>
+        </div>
         {lastSyncedAt && (
-          <span className="text-muted-foreground/70">
-            • ล่าสุด {formatDate(lastSyncedAt)}
+          <span className="text-muted-foreground/70 sm:before:mr-2 sm:before:content-['•']">
+            ล่าสุด {formatDate(lastSyncedAt)}
           </span>
         )}
       </div>
 
       <div
-        className={`rounded-xl border p-6 transition-all duration-500 ${statusStyles.card} ${
+        className={`rounded-xl border p-4 transition-all duration-500 sm:p-6 ${statusStyles.card} ${
           statusPulse ? "ring-2 ring-emerald-400 ring-offset-2" : ""
         }`}
       >
         <p className="text-sm text-muted-foreground">สถานะปัจจุบัน</p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <p className={`text-2xl font-semibold ${statusStyles.title}`}>
+        <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
+          <p className={`text-xl font-semibold sm:text-2xl ${statusStyles.title}`}>
             {caseData.statusLabel}
           </p>
           <CaseStatusBadge status={caseData.status} />
@@ -182,7 +184,7 @@ export function CaseTrackingLive({
         </div>
       )}
 
-      <div className="grid gap-4 rounded-xl border p-6 sm:grid-cols-2">
+      <div className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2 sm:gap-4 sm:p-6">
         <div>
           <p className="text-sm text-muted-foreground">อาการ</p>
           <p className="font-medium">{conditionLabel}</p>

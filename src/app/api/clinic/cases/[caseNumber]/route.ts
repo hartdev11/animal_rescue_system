@@ -5,9 +5,18 @@ import {
   acceptCase,
   updateCaseStatus,
   addTreatmentReport,
+  setRecoveryOutcome,
+  updatePlacement,
   getNextStatus,
+  type RecoveryOutcome,
+  type PlacementAction,
 } from "@/lib/server/case-store";
-import { CASE_STATUS_LABELS, DEMO_CLINIC_ID, getCaseStatusLabel } from "@/lib/constants";
+import {
+  CASE_STATUS_LABELS,
+  DEMO_CLINIC_ID,
+  PLACEMENT_STATUS_LABELS,
+  getCaseStatusLabel,
+} from "@/lib/constants";
 import type { CaseStatus, TreatmentReportType } from "@/types";
 
 interface RouteParams {
@@ -26,7 +35,25 @@ export async function GET(_request: Request, { params }: RouteParams) {
   }
 
   const timeline = await getCaseTimeline(caseNumber);
-  const next = getNextStatus(rescueCase.status, rescueCase.wantsToAdopt);
+  const next = getNextStatus(
+    rescueCase.status,
+    rescueCase.wantsToAdopt,
+    rescueCase.placementStatus
+  );
+
+  const recoveryOutcomes: RecoveryOutcome[] =
+    rescueCase.status === "RECOVERY"
+      ? rescueCase.wantsToAdopt
+        ? ["reporterAdopt"]
+        : ["awaitingShelter"]
+      : [];
+
+  const placementActions: PlacementAction[] = [];
+  if (rescueCase.placementStatus === "AWAITING_SHELTER") {
+    placementActions.push("markInShelter", "markHomed");
+  } else if (rescueCase.placementStatus === "IN_SHELTER") {
+    placementActions.push("markHomed");
+  }
 
   return NextResponse.json({
     case: {
@@ -36,6 +63,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
       acceptedAt: rescueCase.acceptedAt?.toISOString(),
       closedAt: rescueCase.closedAt?.toISOString(),
       statusLabel: getCaseStatusLabel(rescueCase.status, rescueCase.wantsToAdopt),
+      placementLabel: rescueCase.placementStatus
+        ? PLACEMENT_STATUS_LABELS[rescueCase.placementStatus].th
+        : null,
     },
     timeline: timeline.map((e) => ({
       ...e,
@@ -47,6 +77,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
           label: getCaseStatusLabel(next, rescueCase.wantsToAdopt),
         }
       : null,
+    recoveryOutcomes,
+    placementActions,
   });
 }
 
@@ -120,6 +152,63 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           updatedAt: updated.updatedAt.toISOString(),
           closedAt: updated.closedAt?.toISOString(),
           statusLabel: getCaseStatusLabel(updated.status, updated.wantsToAdopt),
+          placementLabel: updated.placementStatus
+            ? PLACEMENT_STATUS_LABELS[updated.placementStatus].th
+            : null,
+        },
+      });
+    }
+
+    if (body.action === "recoveryOutcome") {
+      const updated = await setRecoveryOutcome(
+        caseNumber,
+        body.outcome as RecoveryOutcome,
+        body.note
+      );
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: { message: "ไม่สามารถบันทึกผลลัพธ์หลังฟื้นตัวได้" } },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        case: {
+          ...updated,
+          createdAt: updated.createdAt.toISOString(),
+          updatedAt: updated.updatedAt.toISOString(),
+          statusLabel: getCaseStatusLabel(updated.status, updated.wantsToAdopt),
+          placementLabel: updated.placementStatus
+            ? PLACEMENT_STATUS_LABELS[updated.placementStatus].th
+            : null,
+        },
+      });
+    }
+
+    if (body.action === "updatePlacement") {
+      const updated = await updatePlacement(
+        caseNumber,
+        body.placementAction as PlacementAction,
+        body.note
+      );
+
+      if (!updated) {
+        return NextResponse.json(
+          { error: { message: "ไม่สามารถอัปเดตสถานะที่พักได้" } },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({
+        case: {
+          ...updated,
+          createdAt: updated.createdAt.toISOString(),
+          updatedAt: updated.updatedAt.toISOString(),
+          statusLabel: getCaseStatusLabel(updated.status, updated.wantsToAdopt),
+          placementLabel: updated.placementStatus
+            ? PLACEMENT_STATUS_LABELS[updated.placementStatus].th
+            : null,
         },
       });
     }

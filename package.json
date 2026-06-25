@@ -12,7 +12,8 @@
     "firebase:deploy-rules": "firebase deploy --only firestore:rules,storage",
     "firebase:deploy-indexes": "firebase deploy --only firestore:indexes",
     "migrate:firebase": "node scripts/migrate-to-firebase.mjs",
-    "firebase:init": "node scripts/migrate-to-firebase.mjs"
+    "firebase:init": "node scripts/migrate-to-firebase.mjs",
+    "deploy:firebase": "firebase deploy --only apphosting,firestore:rules,storage"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

@@ -3,6 +3,7 @@ import type {
   AnimalCondition,
   CaseStatus,
   CaseTimelineEvent,
+  PlacementStatus,
   RescueCase,
   TreatmentReportType,
 } from "@/types";
@@ -68,6 +69,7 @@ function mapCase(id: string, data: FirebaseFirestore.DocumentData): RescueCase {
     updatedAt: toDate(data.updatedAt),
     acceptedAt: data.acceptedAt ? toDate(data.acceptedAt) : undefined,
     closedAt: data.closedAt ? toDate(data.closedAt) : undefined,
+    placementStatus: data.placementStatus ?? null,
   };
 }
 
@@ -158,17 +160,19 @@ async function seedClinics() {
 
 export function getNextStatus(
   current: CaseStatus,
-  wantsToAdopt = false
+  wantsToAdopt = false,
+  placementStatus?: PlacementStatus | null
 ): CaseStatus | null {
+  // หลังฟื้นตัวต้องเลือกผลลัพธ์ (รอศูนย์ / ผู้แจ้งรับเลี้ยง / เสียชีวิต) แทนการกดขั้นถัดไป
+  if (current === "RECOVERY") return null;
+
+  // รอศูนย์พักพิง — ปิดเคสผ่านหน้าจัดการศูนย์ (ได้เจ้าของแล้ว → ADOPTED)
+  if (current === "READY_FOR_ADOPTION" && placementStatus) return null;
+
   const i = CASE_STATUS_FLOW.indexOf(current);
   if (i === -1 || i >= CASE_STATUS_FLOW.length - 1) return null;
 
   let next = CASE_STATUS_FLOW[i + 1]!;
-
-  // ผู้แจ้งต้องการรับเลี้ยงเอง — ข้าม "พร้อมรับเลี้ยง" ไปส่งมอบให้ผู้แจ้งเลย
-  if (wantsToAdopt && current === "RECOVERY" && next === "READY_FOR_ADOPTION") {
-    next = "ADOPTED";
-  }
 
   return next;
 }
@@ -260,6 +264,7 @@ export async function getCaseTimeline(
 export async function listCases(filters?: {
   province?: string;
   status?: CaseStatus;
+  placementStatus?: PlacementStatus | PlacementStatus[];
 }): Promise<RescueCase[]> {
   const db = getDb();
   const snap = await db
@@ -276,6 +281,14 @@ export async function listCases(filters?: {
   }
   if (filters?.status) {
     cases = cases.filter((c) => c.status === filters.status);
+  }
+  if (filters?.placementStatus) {
+    const wanted = Array.isArray(filters.placementStatus)
+      ? filters.placementStatus
+      : [filters.placementStatus];
+    cases = cases.filter(
+      (c) => c.placementStatus && wanted.includes(c.placementStatus)
+    );
   }
 
   return cases;
@@ -323,7 +336,11 @@ export async function updateCaseStatus(
   const rescueCase = await getCaseByNumber(caseNumber);
   if (!rescueCase) return null;
 
-  const expected = getNextStatus(rescueCase.status, rescueCase.wantsToAdopt);
+  const expected = getNextStatus(
+    rescueCase.status,
+    rescueCase.wantsToAdopt,
+    rescueCase.placementStatus
+  );
   if (expected !== newStatus) return null;
 
   const db = getDb();
@@ -421,6 +438,140 @@ export async function addTreatmentReport(
   return { ...rescueCase, updatedAt: now };
 }
 
+export type RecoveryOutcome = "awaitingShelter" | "reporterAdopt";
+
+export async function setRecoveryOutcome(
+  caseNumber: string,
+  outcome: RecoveryOutcome,
+  note?: string
+): Promise<RescueCase | null> {
+  const rescueCase = await getCaseByNumber(caseNumber);
+  if (!rescueCase || rescueCase.status !== "RECOVERY") return null;
+
+  const db = getDb();
+  const now = new Date();
+
+  if (outcome === "reporterAdopt") {
+    if (!rescueCase.wantsToAdopt) return null;
+
+    await db.collection("cases").doc(rescueCase.id).update({
+      status: "ADOPTED",
+      placementStatus: "HOMED",
+      updatedAt: Timestamp.fromDate(now),
+    });
+
+    await addTimeline(
+      rescueCase.id,
+      "ADOPTED",
+      "ผู้แจ้งรับเลี้ยงต่อ",
+      note ?? "ส่งมอบสัตว์ให้ผู้แจ้งเคสดูแลต่อตามที่แจ้งไว้ตอนรายงานเคส",
+      "clinic"
+    );
+
+    return {
+      ...rescueCase,
+      status: "ADOPTED",
+      placementStatus: "HOMED",
+      updatedAt: now,
+    };
+  }
+
+  if (rescueCase.wantsToAdopt) return null;
+
+  await db.collection("cases").doc(rescueCase.id).update({
+    status: "READY_FOR_ADOPTION",
+    placementStatus: "AWAITING_SHELTER",
+    updatedAt: Timestamp.fromDate(now),
+  });
+
+  await addTimeline(
+    rescueCase.id,
+    "READY_FOR_ADOPTION",
+    "รอศูนย์พักพิง / ยังไม่ได้บ้าน",
+    note ?? "สัตว์ฟื้นตัวแล้ว รอจัดหาศูนย์พักพิงหรือเจ้าของ",
+    "clinic"
+  );
+
+  return {
+    ...rescueCase,
+    status: "READY_FOR_ADOPTION",
+    placementStatus: "AWAITING_SHELTER",
+    updatedAt: now,
+  };
+}
+
+export type PlacementAction = "markInShelter" | "markHomed";
+
+export async function updatePlacement(
+  caseNumber: string,
+  action: PlacementAction,
+  note?: string
+): Promise<RescueCase | null> {
+  const rescueCase = await getCaseByNumber(caseNumber);
+  if (!rescueCase) return null;
+
+  const db = getDb();
+  const now = new Date();
+
+  if (action === "markInShelter") {
+    if (rescueCase.placementStatus !== "AWAITING_SHELTER") return null;
+
+    await db.collection("cases").doc(rescueCase.id).update({
+      placementStatus: "IN_SHELTER",
+      updatedAt: Timestamp.fromDate(now),
+    });
+
+    await addTimeline(
+      rescueCase.id,
+      rescueCase.status,
+      "ส่งเข้าศูนย์พักพิงแล้ว",
+      note ?? "สัตว์อยู่ในศูนย์พักพิงแล้ว รอหาเจ้าของ",
+      "clinic"
+    );
+
+    return {
+      ...rescueCase,
+      placementStatus: "IN_SHELTER",
+      updatedAt: now,
+    };
+  }
+
+  if (
+    rescueCase.placementStatus !== "AWAITING_SHELTER" &&
+    rescueCase.placementStatus !== "IN_SHELTER"
+  ) {
+    return null;
+  }
+
+  await db.collection("cases").doc(rescueCase.id).update({
+    status: "ADOPTED",
+    placementStatus: "HOMED",
+    updatedAt: Timestamp.fromDate(now),
+  });
+
+  await addTimeline(
+    rescueCase.id,
+    "ADOPTED",
+    "ได้เจ้าของแล้ว",
+    note ?? "สัตว์ได้รับการรับเลี้ยงหรือมีเจ้าของแล้ว",
+    "clinic"
+  );
+
+  return {
+    ...rescueCase,
+    status: "ADOPTED",
+    placementStatus: "HOMED",
+    updatedAt: now,
+  };
+}
+
+export async function listShelterCases(province?: string): Promise<RescueCase[]> {
+  return listCases({
+    province,
+    placementStatus: ["AWAITING_SHELTER", "IN_SHELTER"],
+  });
+}
+
 export async function getClinicStats(province?: string) {
   const cases = await listCases(province ? { province } : undefined);
   return {
@@ -431,5 +582,54 @@ export async function getClinicStats(province?: string) {
     recovery: cases.filter((c) => c.status === "RECOVERY").length,
     readyForAdoption: cases.filter((c) => c.status === "READY_FOR_ADOPTION").length,
     closedCases: cases.filter((c) => c.status === "CLOSED").length,
+  };
+}
+
+export interface ClinicDashboardData {
+  totalCases: number;
+  activeCases: number;
+  todayCases: number;
+  stats: {
+    newCases: number;
+    acceptedCases: number;
+    onTheWay: number;
+    rescued: number;
+    underTreatment: number;
+    recovery: number;
+    readyForAdoption: number;
+    adopted: number;
+    closedCases: number;
+  };
+  recentCases: RescueCase[];
+  urgentCases: RescueCase[];
+}
+
+export async function getClinicDashboard(
+  province?: string
+): Promise<ClinicDashboardData> {
+  const cases = await listCases(province ? { province } : undefined);
+  const count = (status: CaseStatus) =>
+    cases.filter((c) => c.status === status).length;
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  return {
+    totalCases: cases.length,
+    activeCases: cases.filter((c) => c.status !== "CLOSED").length,
+    todayCases: cases.filter((c) => c.createdAt >= todayStart).length,
+    stats: {
+      newCases: count("NEW"),
+      acceptedCases: count("ACCEPTED"),
+      onTheWay: count("ON_THE_WAY"),
+      rescued: count("RESCUED"),
+      underTreatment: count("UNDER_TREATMENT"),
+      recovery: count("RECOVERY"),
+      readyForAdoption: count("READY_FOR_ADOPTION"),
+      adopted: count("ADOPTED"),
+      closedCases: count("CLOSED"),
+    },
+    recentCases: cases.slice(0, 5),
+    urgentCases: cases.filter((c) => c.status === "NEW").slice(0, 5),
   };
 }

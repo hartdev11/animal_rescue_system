@@ -54,29 +54,29 @@ export function UserLanding({ stats, authMode, onOpenAuthModal }: UserLandingPro
 
   return (
     <>
-      <section className="bg-linear-to-br from-blue-50 to-emerald-50 py-16">
+      <section className="bg-linear-to-br from-blue-50 to-emerald-50 py-10 sm:py-16">
         <div className="container mx-auto px-4 text-center">
           {authMode && (
             <div className="mb-4 flex justify-center">
               <UserAuthBadge mode={authMode} />
             </div>
           )}
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 md:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
             ยินดีต้อนรับ<span className="text-blue-600"> ผู้ใช้งาน</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-gray-600 sm:text-lg">
             รายงานสัตว์จรจัดที่บาดเจ็บได้ทันที ระบบจะส่งเคสไปยังคลินิกในจังหวัดโดยอัตโนมัติ
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
             <Link
               href="/report"
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:bg-red-700"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-red-700 sm:px-8"
             >
               🚨 รายงานสัตว์บาดเจ็บ
             </Link>
             <Link
               href="/adoption"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-emerald-300 bg-white px-8 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-emerald-300 bg-white px-6 py-3 text-base font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:px-8"
             >
               🐾 ดูสัตว์รอรับเลี้ยง
             </Link>
@@ -93,8 +93,8 @@ export function UserLanding({ stats, authMode, onOpenAuthModal }: UserLandingPro
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="text-center text-2xl font-bold">สิ่งที่คุณทำได้</h2>
+      <section className="container mx-auto px-4 py-10 sm:py-12">
+        <h2 className="text-center text-xl font-bold sm:text-2xl">สิ่งที่คุณทำได้</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {featureCards.map((item) => {
             const cardClass =

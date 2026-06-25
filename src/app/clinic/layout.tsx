@@ -12,7 +12,9 @@ import {
 } from "@/components/clinic/clinic-login-form";
 
 const navItems = [
-  { href: "/clinic/cases", label: "เคสทั้งหมด" },
+  { href: "/clinic/dashboard", label: "แดชบอร์ด", exact: true },
+  { href: "/clinic/cases", label: "เคสทั้งหมด", exact: false },
+  { href: "/clinic/animals", label: "รอศูนย์พักพิง", exact: true },
 ];
 
 export default function ClinicLayout({
@@ -66,20 +68,25 @@ export default function ClinicLayout({
           {session.clinicName}
         </p>
         <nav className="space-y-1 p-4">
-          {navItems.map((item) => (
+          {navItems.map((item) => {
+            const active = item.exact
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
+            return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
                 "block rounded-lg px-4 py-2 text-sm transition",
-                pathname.startsWith(item.href)
+                active
                   ? "bg-emerald-100 font-medium text-emerald-800"
                   : "text-gray-600 hover:bg-gray-100"
               )}
             >
               {item.label}
             </Link>
-          ))}
+            );
+          })}
         </nav>
       </aside>
       <div className="flex flex-1 flex-col">

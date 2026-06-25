@@ -16,7 +16,7 @@ export function CaseTimeline({
   const latestId = events.length > 0 ? events[events.length - 1].id : null;
 
   return (
-    <div className="rounded-xl border p-6">
+    <div className="rounded-xl border p-4 sm:p-6">
       <h2 className="font-semibold">{title}</h2>
       <div className="mt-4 space-y-0">
         {events.map((event, i) => {

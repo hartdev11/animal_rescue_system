@@ -25,9 +25,11 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
 
   return (
     <PublicLayout>
-      <div className="container mx-auto max-w-3xl px-4 py-12">
-        <h1 className="text-3xl font-bold">ติดตามเคส</h1>
-        <p className="mt-1 font-mono text-emerald-700">{caseNumber}</p>
+      <div className="container mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-12">
+        <h1 className="text-2xl font-bold sm:text-3xl">ติดตามเคส</h1>
+        <p className="mt-1 break-all font-mono text-sm text-emerald-700 sm:text-base">
+          {caseNumber}
+        </p>
 
         {rescueCase ? (
           <CaseTrackingLive
