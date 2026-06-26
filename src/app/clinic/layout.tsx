@@ -14,7 +14,7 @@ import {
 const navItems = [
   { href: "/clinic/dashboard", label: "แดชบอร์ด", exact: true },
   { href: "/clinic/cases", label: "เคสทั้งหมด", exact: false },
-  { href: "/clinic/animals", label: "รอศูนย์พักพิง", exact: true },
+  { href: "/clinic/animals", label: "หาบ้านให้สัตว์", exact: true },
 ];
 
 export default function ClinicLayout({

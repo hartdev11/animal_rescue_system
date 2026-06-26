@@ -171,3 +171,38 @@ export async function uploadImages(
 
   return urls;
 }
+
+export async function uploadAnimalImages(
+  animalId: string,
+  files: { buffer: Buffer; mimeType: string }[]
+): Promise<string[]> {
+  if (files.length === 0) return [];
+
+  const bucket = await getStorageBucket();
+  const urls: string[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]!;
+    const ext = file.mimeType.includes("png")
+      ? "png"
+      : file.mimeType.includes("webp")
+        ? "webp"
+        : "jpg";
+    const filePath = `animals/${animalId}/${i}.${ext}`;
+    const token = randomUUID();
+
+    await bucket.file(filePath).save(file.buffer, {
+      metadata: {
+        contentType: file.mimeType,
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
+    });
+
+    const encoded = encodeURIComponent(filePath);
+    urls.push(
+      `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encoded}?alt=media&token=${token}`
+    );
+  }
+
+  return urls;
+}

@@ -18,6 +18,7 @@ type CaseRow = Omit<RescueCase, "createdAt" | "updatedAt"> & {
   updatedAt: string;
   statusLabel: string;
   placementLabel: string | null;
+  animalId: string | null;
 };
 
 type ShelterFilter = "ALL" | PlacementStatus;
@@ -34,9 +35,10 @@ function buildShelterUrl(sessionProvince: string, showAllProvinces: boolean) {
 
 export function ClinicShelterList() {
   const session = getClinicSession();
+  const province = session?.province ?? "";
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [counts, setCounts] = useState({ awaiting: 0, inShelter: 0, total: 0 });
-  const [loading, setLoading] = useState(Boolean(session));
+  const [loading, setLoading] = useState(Boolean(province));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<ShelterFilter>("ALL");
   const [showAllProvinces, setShowAllProvinces] = useState(false);
@@ -44,8 +46,8 @@ export function ClinicShelterList() {
   const [noteByCase, setNoteByCase] = useState<Record<string, string>>({});
 
   const fetchShelter = useCallback(async () => {
-    if (!session) return null;
-    const res = await fetch(buildShelterUrl(session.province, showAllProvinces));
+    if (!province) return null;
+    const res = await fetch(buildShelterUrl(province, showAllProvinces));
     if (!res.ok) throw new Error("โหลดไม่สำเร็จ");
     return res.json() as Promise<{
       cases: CaseRow[];
@@ -53,10 +55,10 @@ export function ClinicShelterList() {
       inShelter: number;
       total: number;
     }>;
-  }, [session, showAllProvinces]);
+  }, [province, showAllProvinces]);
 
   const loadShelter = useCallback(async () => {
-    if (!session) return;
+    if (!province) return;
     setLoading(true);
     setLoadError(null);
     try {
@@ -74,10 +76,10 @@ export function ClinicShelterList() {
     } finally {
       setLoading(false);
     }
-  }, [session, fetchShelter]);
+  }, [province, fetchShelter]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!province) return;
     let cancelled = false;
 
     void (async () => {
@@ -102,7 +104,7 @@ export function ClinicShelterList() {
     return () => {
       cancelled = true;
     };
-  }, [session, fetchShelter]);
+  }, [province, fetchShelter]);
 
   const filtered = useMemo(() => {
     if (filter === "ALL") return cases;
@@ -140,9 +142,9 @@ export function ClinicShelterList() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">รอศูนย์พักพิง</h1>
-          <p className="text-muted-foreground">
-            สัตว์ที่ฟื้นตัวแล้วแต่ยังไม่มีเจ้าของหรือศูนย์พักพิง
+          <h2 className="text-lg font-semibold">เคสรอลงทะเบียน</h2>
+          <p className="text-sm text-muted-foreground">
+            เคสที่ฟื้นตัวแล้ว — กดลงทะเบียนเพื่อแสดงในหน้าหาบ้านให้สัตว์
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={loadShelter} disabled={loading}>
@@ -281,7 +283,13 @@ export function ClinicShelterList() {
                     }
                   />
                   <div className="flex flex-wrap gap-2">
-                    {isAwaiting && (
+                    {c.animalId ? (
+                      <Button size="sm" asChild>
+                        <Link href={`/clinic/animals/${c.animalId}`}>
+                          กรอกรายละเอียด
+                        </Link>
+                      </Button>
+                    ) : isAwaiting ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -293,11 +301,11 @@ export function ClinicShelterList() {
                         ) : (
                           <>
                             <Warehouse className="mr-1.5 h-4 w-4" />
-                            ส่งเข้าศูนย์พักพิงแล้ว
+                            ส่งเข้าศูนย์พักพิง
                           </>
                         )}
                       </Button>
-                    )}
+                    ) : null}
                     <Button
                       size="sm"
                       disabled={busy}

@@ -1,2 +1,3 @@
-// Placeholder — Adoption listing components will be implemented here
-export {};
+export { AdoptionList } from "./adoption-list";
+export { AdoptionDetailView } from "./adoption-detail-view";
+export { AdoptionMatch } from "./adoption-match";

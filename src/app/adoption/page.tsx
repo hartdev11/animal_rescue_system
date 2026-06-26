@@ -1,26 +1,40 @@
-import Link from "next/link";
 import { PublicLayout } from "@/components/layout";
+import { AdoptionList } from "@/components/adoption/adoption-list";
+import Link from "next/link";
 
 export const metadata = {
-  title: "รับเลี้ยงสัตว์ | Animal Rescue System",
+  title: "หาบ้านให้สัตว์ | Animal Rescue System",
+  description: "ดูสัตว์ที่ฟื้นตัวแล้วในศูนย์พักพิงและติดต่อรับเลี้ยง",
 };
 
 export default function AdoptionPage() {
   return (
     <PublicLayout>
       <div className="container mx-auto px-3 py-8 sm:px-4 sm:py-12">
-        <h1 className="text-2xl font-bold sm:text-3xl">🐾 สัตว์รอรับเลี้ยง</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">🐾 หาบ้านให้สัตว์</h1>
         <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          สัตว์ที่ฟื้นตัวแล้วและพร้อมหาบ้านใหม่
+          สัตว์ที่ฟื้นตัวแล้วและพร้อมหาบ้านใหม่ — เลือกศูนย์พักพิงและชนิดสัตว์ที่สนใจ
         </p>
-        <div className="mt-6 rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground sm:mt-8 sm:p-12 sm:text-base">
-          รายการสัตว์รอรับเลี้ยงจะแสดงที่นี่
+
+        <Link
+          href="/adoption/match"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-violet-200 bg-linear-to-r from-violet-50 to-indigo-50 p-4 transition hover:border-violet-300 hover:shadow-sm"
+        >
+          <span className="text-2xl">🔮</span>
+          <div>
+            <p className="font-semibold text-violet-900">ยังไม่รู้จะเลี้ยงตัวไหน?</p>
+            <p className="text-sm text-violet-700">
+              ทำแบบทดสอบหรือพิมพ์ลักษณะที่อยากได้ → ระบบแนะนำสัตว์ที่เหมาะกับคุณ
+            </p>
+          </div>
+          <span className="ml-auto hidden text-sm font-medium text-violet-600 sm:inline">
+            เริ่มเลย →
+          </span>
+        </Link>
+
+        <div className="mt-6 sm:mt-8">
+          <AdoptionList />
         </div>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          <Link href="/" className="text-emerald-600 hover:underline">
-            กลับหน้าแรก
-          </Link>
-        </p>
       </div>
     </PublicLayout>
   );

@@ -42,14 +42,25 @@ export function Header({
         <div className="hidden items-center gap-3 md:flex">
           {role === "user" && authMode && <UserAuthBadge mode={authMode} />}
 
-          {role === "user" && (
+          {(role === "user" || !role) && (
             <>
               <Link
                 href="/adoption"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                รับเลี้ยงสัตว์
+                หาบ้านให้สัตว์
               </Link>
+              <Link
+                href="/adoption/match"
+                className="text-sm text-violet-600 hover:text-violet-800"
+              >
+                หาสัตว์ที่เหมาะกับคุณ
+              </Link>
+            </>
+          )}
+
+          {role === "user" && (
+            <>
               <Link
                 href="/report"
                 className="rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
@@ -127,6 +138,25 @@ export function Header({
             </div>
           )}
 
+          {(role === "user" || !role) && (
+            <>
+              <Link
+                href="/adoption"
+                onClick={closeMobile}
+                className="block rounded-lg px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                หาบ้านให้สัตว์
+              </Link>
+              <Link
+                href="/adoption/match"
+                onClick={closeMobile}
+                className="block rounded-lg px-4 py-3 text-sm text-violet-700 hover:bg-violet-50"
+              >
+                🔮 หาสัตว์ที่เหมาะกับคุณ
+              </Link>
+            </>
+          )}
+
           {role === "user" && (
             <>
               <Link
@@ -135,13 +165,6 @@ export function Header({
                 className="flex rounded-lg bg-red-600 px-4 py-3 text-center text-sm font-medium text-white"
               >
                 🚨 รายงานเคสฉุกเฉิน
-              </Link>
-              <Link
-                href="/adoption"
-                onClick={closeMobile}
-                className="block rounded-lg px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                รับเลี้ยงสัตว์
               </Link>
               {onOpenAuthModal && (
                 <button

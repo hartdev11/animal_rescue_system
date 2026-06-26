@@ -96,27 +96,77 @@ export interface CaseUpdate {
   createdBy?: string;
 }
 
+// ─── Shelter ───────────────────────────────────────────────────
+export interface Shelter {
+  id: string;
+  name: string;
+  province: string;
+  address: string;
+  phone: string;
+  lineId?: string;
+  email?: string;
+  latitude: number;
+  longitude: number;
+  directions?: string;
+  openHours?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ─── Animals (Adoption) ────────────────────────────────────────
 export type AdoptionStatus = "AVAILABLE" | "PENDING" | "ADOPTED";
 
+export type AnimalSpecies = "DOG" | "CAT" | "RABBIT" | "BIRD" | "OTHER";
+
 export type AnimalGender = "MALE" | "FEMALE" | "UNKNOWN";
+
+/** นิสัยที่คลินิกเลือกตรงๆ — ใช้จับคู่เท่านั้น ไม่เดาจากข้อความ */
+export type TemperamentTrait =
+  | "affectionate"
+  | "active"
+  | "calm"
+  | "independent"
+  | "good_with_kids"
+  | "good_with_elderly";
+
+export type EnergyLevel = "low" | "medium" | "high";
 
 export interface Animal {
   id: string;
   caseId: string;
+  caseNumber: string;
   clinicId: string;
+  shelterId: string;
+  species: AnimalSpecies;
+  breed?: string;
   name: string;
   gender: AnimalGender;
   estimatedAge: string;
   weight?: number;
   description: string;
   personality?: string;
+  /** นิสัยที่คลินิกเลือก — ใช้จับคู่ */
+  temperamentTraits: TemperamentTrait[];
+  /** ระดับพลังงานที่คลินิกประเมิน */
+  energyLevel?: EnergyLevel;
+  suitableForCondo: boolean;
+  suitableForKids: boolean;
+  suitableForElderly: boolean;
+  hasDisability: boolean;
+  disabilityNotes?: string;
   vaccinationStatus: boolean;
   sterilizationStatus: boolean;
   imageUrls: string[];
   adoptionStatus: AdoptionStatus;
+  /** false = ร่างจากเคส ยังไม่แสดงหน้าสาธารณะ */
+  profileComplete: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AnimalWithShelter extends Animal {
+  shelter: Shelter;
 }
 
 // ─── Statistics ────────────────────────────────────────────────
@@ -151,7 +201,10 @@ export interface ReportCaseInput {
 }
 
 export interface CreateAnimalInput {
-  caseId: string;
+  caseNumber: string;
+  shelterId: string;
+  species: AnimalSpecies;
+  breed?: string;
   name: string;
   gender: AnimalGender;
   estimatedAge: string;

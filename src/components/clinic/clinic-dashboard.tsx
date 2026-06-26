@@ -243,23 +243,24 @@ function CaseMiniRow({ c, detailed }: { c: CaseRow; detailed?: boolean }) {
 
 export function ClinicDashboard() {
   const session = getClinicSession();
+  const province = session?.province ?? "";
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(Boolean(session));
+  const [loading, setLoading] = useState(Boolean(province));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showAllProvinces, setShowAllProvinces] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   const fetchDashboard = useCallback(async () => {
-    if (!session) return null;
-    const res = await fetch(buildDashboardUrl(session.province, showAllProvinces), {
+    if (!province) return null;
+    const res = await fetch(buildDashboardUrl(province, showAllProvinces), {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("โหลดไม่สำเร็จ");
     return res.json() as Promise<DashboardData>;
-  }, [session, showAllProvinces]);
+  }, [province, showAllProvinces]);
 
   const loadDashboard = useCallback(async () => {
-    if (!session) return;
+    if (!province) return;
     setLoading(true);
     setLoadError(null);
     try {
@@ -273,10 +274,10 @@ export function ClinicDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [session, fetchDashboard]);
+  }, [province, fetchDashboard]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!province) return;
 
     let cancelled = false;
 
@@ -298,10 +299,10 @@ export function ClinicDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [session, fetchDashboard]);
+  }, [province, fetchDashboard]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!province) return;
 
     const interval = setInterval(() => {
       void (async () => {
@@ -319,7 +320,7 @@ export function ClinicDashboard() {
     }, POLL_MS);
 
     return () => clearInterval(interval);
-  }, [session, fetchDashboard]);
+  }, [province, fetchDashboard]);
 
   const workflowSteps = useMemo(() => {
     if (!data) return [];
@@ -359,7 +360,7 @@ export function ClinicDashboard() {
           <div>
             <p className="text-sm font-medium text-emerald-700">พอร์ทัลคลินิก</p>
             <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{session.clinicName}</h1>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Badge variant="secondary" className="font-normal">
                 {showAllProvinces ? "ทุกจังหวัด" : `จังหวัด${session.province}`}
               </Badge>
@@ -369,7 +370,7 @@ export function ClinicDashboard() {
                   อัปเดต {formatDate(lastSyncedAt)}
                 </span>
               )}
-            </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={loadDashboard} disabled={loading}>

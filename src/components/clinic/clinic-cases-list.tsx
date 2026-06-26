@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getClinicSession,
-  type ClinicSession,
 } from "@/components/clinic/clinic-login-form";
 import { ANIMAL_CONDITIONS, CASE_STATUS_LABELS } from "@/lib/constants";
 import { getCaseImageUrls } from "@/lib/case-images";
@@ -22,13 +21,13 @@ type CaseRow = Omit<RescueCase, "createdAt" | "updatedAt"> & {
 };
 
 function buildCasesUrl(
-  session: ClinicSession,
+  province: string,
   filter: CaseStatus | "ALL",
   showAllProvinces: boolean
 ) {
   const params = new URLSearchParams();
   if (!showAllProvinces) {
-    params.set("province", session.province);
+    params.set("province", province);
   } else {
     params.set("all", "true");
   }
@@ -38,9 +37,10 @@ function buildCasesUrl(
 
 export function ClinicCasesList() {
   const session = getClinicSession();
+  const province = session?.province ?? "";
   const searchParams = useSearchParams();
   const [cases, setCases] = useState<CaseRow[]>([]);
-  const [loading, setLoading] = useState(Boolean(session));
+  const [loading, setLoading] = useState(Boolean(province));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<CaseStatus | "ALL">("ALL");
   const [showAllProvinces, setShowAllProvinces] = useState(false);
@@ -53,15 +53,15 @@ export function ClinicCasesList() {
   }, [searchParams]);
 
   const fetchCases = useCallback(async () => {
-    if (!session) return [];
-    const res = await fetch(buildCasesUrl(session, filter, showAllProvinces));
+    if (!province) return [];
+    const res = await fetch(buildCasesUrl(province, filter, showAllProvinces));
     if (!res.ok) throw new Error("โหลดไม่สำเร็จ");
     const data = await res.json();
     return (data.cases ?? []) as CaseRow[];
-  }, [session, filter, showAllProvinces]);
+  }, [province, filter, showAllProvinces]);
 
   const loadCases = useCallback(async () => {
-    if (!session) return;
+    if (!province) return;
     setLoading(true);
     setLoadError(null);
     try {
@@ -71,10 +71,10 @@ export function ClinicCasesList() {
     } finally {
       setLoading(false);
     }
-  }, [session, fetchCases]);
+  }, [province, fetchCases]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!province) return;
 
     let cancelled = false;
 
@@ -97,10 +97,10 @@ export function ClinicCasesList() {
     return () => {
       cancelled = true;
     };
-  }, [session, fetchCases]);
+  }, [province, fetchCases]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!province) return;
 
     const interval = setInterval(() => {
       void (async () => {
@@ -115,7 +115,7 @@ export function ClinicCasesList() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [session, fetchCases]);
+  }, [province, fetchCases]);
 
   if (!session) return null;
 

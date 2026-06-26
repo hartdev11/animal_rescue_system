@@ -4,3 +4,7 @@ export { ClinicCasesList } from "./clinic-cases-list";
 export { ClinicCaseDetail } from "./clinic-case-detail";
 export { ClinicDashboard } from "./clinic-dashboard";
 export { ClinicShelterList } from "./clinic-shelter-list";
+export { ClinicAnimalsHub } from "./clinic-animals-hub";
+export { ClinicAnimalForm } from "./clinic-animal-form";
+export { ClinicPendingAnimals } from "./clinic-pending-animals";
+export { ClinicRegisteredAnimals } from "./clinic-registered-animals";

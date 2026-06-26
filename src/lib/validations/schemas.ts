@@ -40,16 +40,50 @@ export const caseUpdateSchema = z.object({
     .max(2000),
 });
 
-export const animalSchema = z.object({
-  name: z.string().min(1, "กรุณากรอกชื่อสัตว์"),
-  gender: z.enum(["MALE", "FEMALE", "UNKNOWN"]),
-  estimatedAge: z.string().min(1, "กรุณากรอกอายุโดยประมาณ"),
-  weight: z.number().positive().optional(),
-  description: z.string().min(10, "กรุณากรอกคำอธิบาย"),
-  personality: z.string().optional(),
-  vaccinationStatus: z.boolean(),
-  sterilizationStatus: z.boolean(),
-});
+const temperamentTraitSchema = z.enum([
+  "affectionate",
+  "active",
+  "calm",
+  "independent",
+  "good_with_kids",
+  "good_with_elderly",
+]);
+
+const energyLevelSchema = z.enum(["low", "medium", "high"]);
+
+export const animalSchema = z
+  .object({
+    caseNumber: z.string().min(1, "กรุณาระบุเลขเคส"),
+    shelterId: z.string().min(1, "กรุณาเลือกศูนย์พักพิง"),
+    species: z.enum(["DOG", "CAT", "RABBIT", "BIRD", "OTHER"]),
+    breed: z.string().max(100).optional(),
+    name: z.string().min(1, "กรุณากรอกชื่อสัตว์"),
+    gender: z.enum(["MALE", "FEMALE", "UNKNOWN"]),
+    estimatedAge: z.string().min(1, "กรุณากรอกอายุโดยประมาณ"),
+    weight: z.number().positive().optional(),
+    description: z.string().min(10, "กรุณากรอกคำอธิบาย"),
+    personality: z.string().max(500).optional(),
+    temperamentTraits: z
+      .array(temperamentTraitSchema)
+      .min(1, "กรุณาเลือกแท็กนิสัยอย่างน้อย 1 ข้อ"),
+    energyLevel: energyLevelSchema,
+    suitableForCondo: z.boolean(),
+    suitableForKids: z.boolean(),
+    suitableForElderly: z.boolean(),
+    hasDisability: z.boolean(),
+    disabilityNotes: z.string().max(500).optional(),
+    vaccinationStatus: z.boolean(),
+    sterilizationStatus: z.boolean(),
+  })
+  .refine(
+    (data) =>
+      !data.hasDisability ||
+      (data.disabilityNotes && data.disabilityNotes.trim().length >= 5),
+    {
+      message: "กรุณาระบุรายละเอียดความพิการ",
+      path: ["disabilityNotes"],
+    }
+  );
 
 export type ReportCaseFormData = z.infer<typeof reportCaseSchema>;
 export type ClinicLoginFormData = z.infer<typeof clinicLoginSchema>;

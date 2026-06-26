@@ -1,8 +1,62 @@
-import type { AnimalCondition, CaseStatus, PlacementStatus, TreatmentReportType } from "@/types";
+import type {
+  AnimalCondition,
+  AnimalSpecies,
+  CaseStatus,
+  EnergyLevel,
+  PlacementStatus,
+  TemperamentTrait,
+  TreatmentReportType,
+} from "@/types";
 
 export const APP_NAME = "Animal Rescue System";
 
-export const CASE_NUMBER_PREFIX = "CASE";
+export const ANIMAL_SPECIES: {
+  value: AnimalSpecies;
+  label: string;
+  icon: string;
+}[] = [
+  { value: "DOG", label: "สุนัข", icon: "🐕" },
+  { value: "CAT", label: "แมว", icon: "🐈" },
+  { value: "RABBIT", label: "กระต่าย", icon: "🐇" },
+  { value: "BIRD", label: "นก", icon: "🐦" },
+  { value: "OTHER", label: "อื่นๆ", icon: "🐾" },
+];
+
+export function getSpeciesLabel(species: AnimalSpecies): string {
+  return ANIMAL_SPECIES.find((s) => s.value === species)?.label ?? species;
+}
+
+export function getSpeciesIcon(species: AnimalSpecies): string {
+  return ANIMAL_SPECIES.find((s) => s.value === species)?.icon ?? "🐾";
+}
+
+export const TEMPERAMENT_TRAITS: {
+  value: TemperamentTrait;
+  label: string;
+  quizValue?: string;
+}[] = [
+  { value: "affectionate", label: "ขี้อ้อน ชอบติดคน", quizValue: "affectionate" },
+  { value: "active", label: "กระตือรือร้น ชอบเล่น", quizValue: "active" },
+  { value: "calm", label: "สงบ เงียบ", quizValue: "independent" },
+  { value: "independent", label: "เป็นอิสระ ไม่กวน", quizValue: "independent" },
+  { value: "good_with_kids", label: "อยู่กับเด็กได้", quizValue: "kids" },
+  { value: "good_with_elderly", label: "เหมาะกับผู้สูงอายุ", quizValue: "elderly" },
+];
+
+export const ENERGY_LEVELS: { value: EnergyLevel; label: string }[] = [
+  { value: "low", label: "น้อย — สงบ ไม่ต้องใช้เวลามาก" },
+  { value: "medium", label: "ปานกลาง" },
+  { value: "high", label: "เยอะ — ชอบออกกำลังกาย" },
+];
+
+export function getTemperamentTraitLabel(trait: TemperamentTrait): string {
+  return TEMPERAMENT_TRAITS.find((t) => t.value === trait)?.label ?? trait;
+}
+
+export function getEnergyLevelLabel(level: EnergyLevel): string {
+  return ENERGY_LEVELS.find((l) => l.value === level)?.label ?? level;
+}
+
 
 export const ANIMAL_CONDITIONS: {
   value: AnimalCondition;
@@ -263,6 +317,7 @@ export const THAI_PROVINCES = [
 export const FIRESTORE_COLLECTIONS = {
   USERS: "users",
   CLINICS: "clinics",
+  SHELTERS: "shelters",
   CASES: "cases",
   CASE_UPDATES: "caseUpdates",
   CASE_TIMELINE: "caseTimeline",
@@ -288,5 +343,36 @@ export const DEMO_CLINICS = [
     id: "clinic-saraburi",
     clinicName: "คลินิกสัตวแพทย์สระบุรี (Demo)",
     province: "สระบุรี",
+  },
+] as const;
+
+export const DEMO_SHELTERS = [
+  {
+    id: "shelter-bkk-01",
+    name: "ศูนย์พักพิงสัตว์จรจัด กรุงเทพมหานคร",
+    province: "กรุงเทพมหานคร",
+    address: "123 ถนนพหลโยธิน แขวงจอมพล เขตจตุจักร กรุงเทพมหานคร 10900",
+    phone: "02-123-4567",
+    lineId: "@bkkstray",
+    email: "contact@bkk-animal-shelter.demo",
+    latitude: 13.8199,
+    longitude: 100.5536,
+    directions:
+      "รถไฟฟ้า BTS หมอชิต ทางออก 3 เดินต่อรถเมล์สาย 3 ประมาณ 10 นาที หรือเรียก Grab ไป「ศูนย์พักพิงสัตว์จรจัด กทม.」",
+    openHours: "จันทร์–ศุกร์ 09:00–17:00, เสาร์–อาทิตย์ 10:00–16:00",
+  },
+  {
+    id: "shelter-saraburi-01",
+    name: "ศูนย์ดูแลสัตว์จรจัด สระบุรี",
+    province: "สระบุรี",
+    address: "45 ถนนพหลโยธิน ตำบลปากเพรียว อำเภอเมืองสระบุรี สระบุรี 18000",
+    phone: "036-987-654",
+    lineId: "@saraburishelter",
+    email: "info@saraburi-shelter.demo",
+    latitude: 14.5289,
+    longitude: 100.9103,
+    directions:
+      "จากเส้นพหลโยธิน ขับมุ่งหน้าเหนือ ผ่านตลาดปากเพรียวประมาณ 2 กม. ศูนย์อยู่ทางซ้ายมือมีป้าย「ศูนย์ดูแลสัตว์จรจัด」",
+    openHours: "ทุกวัน 08:30–16:30",
   },
 ] as const;

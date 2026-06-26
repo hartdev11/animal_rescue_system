@@ -11,6 +11,7 @@ import {
   type RecoveryOutcome,
   type PlacementAction,
 } from "@/lib/server/case-store";
+import { markAnimalAdoptedByCaseId, ensureDraftAnimalFromCase } from "@/lib/server/animal-store";
 import {
   CASE_STATUS_LABELS,
   DEMO_CLINIC_ID,
@@ -173,6 +174,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         );
       }
 
+      if (body.outcome === "awaitingShelter") {
+        await ensureDraftAnimalFromCase(caseNumber);
+      }
+
       return NextResponse.json({
         case: {
           ...updated,
@@ -198,6 +203,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
           { error: { message: "ไม่สามารถอัปเดตสถานะที่พักได้" } },
           { status: 400 }
         );
+      }
+
+      if (body.placementAction === "markHomed") {
+        await markAnimalAdoptedByCaseId(updated.id);
+      }
+
+      if (body.placementAction === "markInShelter") {
+        await ensureDraftAnimalFromCase(caseNumber);
       }
 
       return NextResponse.json({

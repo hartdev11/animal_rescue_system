@@ -1,22 +1,29 @@
-import type { Animal, PlatformStatistics } from "@/types";
+import type { Animal, AnimalSpecies, AnimalWithShelter, PlatformStatistics } from "@/types";
+import {
+  getAnimalById,
+  getAnimalWithShelter,
+  listAvailableAnimals,
+  getAdoptionStatistics,
+} from "@/lib/server/animal-store";
 
-export async function getAvailableAnimals(): Promise<Animal[]> {
-  // TODO: Implement adoption listing query
-  return [];
+export async function getAvailableAnimals(
+  options?: { species?: AnimalSpecies; shelterId?: string }
+): Promise<Animal[]> {
+  return listAvailableAnimals(options);
 }
 
-export async function getAnimalById(id: string): Promise<Animal | null> {
-  void id;
-  // TODO: Implement single animal fetch
-  return null;
+export async function getAnimalByIdForPage(
+  id: string
+): Promise<Animal | null> {
+  return getAnimalById(id);
+}
+
+export async function getAnimalDetailWithShelter(
+  id: string
+): Promise<AnimalWithShelter | null> {
+  return getAnimalWithShelter(id);
 }
 
 export async function getPlatformStatistics(): Promise<PlatformStatistics> {
-  // TODO: Implement platform stats aggregation
-  return {
-    totalCases: 0,
-    animalsRescued: 0,
-    animalsRecovered: 0,
-    animalsAdopted: 0,
-  };
+  return getAdoptionStatistics();
 }

@@ -1,14 +1,24 @@
+import { ClinicAnimalForm } from "@/components/clinic/clinic-animal-form";
+
 export const metadata = {
-  title: "เพิ่มสัตว์รอรับเลี้ยง | Clinic Portal",
+  title: "ลงทะเบียนรับเลี้ยง | Clinic Portal",
 };
 
-export default function NewAnimalPage() {
+interface NewAnimalPageProps {
+  searchParams: Promise<{ caseNumber?: string }>;
+}
+
+export default async function NewAnimalPage({ searchParams }: NewAnimalPageProps) {
+  const { caseNumber } = await searchParams;
+
   return (
     <div>
-      <h1 className="text-2xl font-bold">เพิ่มสัตว์รอรับเลี้ยง</h1>
-      <p className="text-muted-foreground">กรอกข้อมูลสัตว์ที่ฟื้นตัวแล้ว</p>
-      <div className="mt-8 max-w-2xl rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-        ฟอร์ม Adoption Module จะ implement ในขั้นตอนถัดไป
+      <h1 className="text-2xl font-bold">ลงทะเบียนสัตว์รอรับเลี้ยง</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        กรอกข้อมูลครบถ้วนเพื่อแสดงในหน้า「หาบ้านให้สัตว์」
+      </p>
+      <div className="mt-8">
+        <ClinicAnimalForm mode="create" initialCaseNumber={caseNumber} />
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export async function GET() {
     configured,
     firestoreReady,
     backend: "firebase",
-    collections: ["cases", "caseTimeline", "clinics", "counters"],
+    collections: ["cases", "caseTimeline", "clinics", "shelters", "animals", "counters"],
     message: !configured
       ? "ยังไม่ได้ตั้งค่า Firebase Admin (.env.local)"
       : firestoreReady

@@ -56,6 +56,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Shelters — public read
+    match /shelters/{shelterId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Counters — server/admin only (use Cloud Functions in production)
     match /counters/{counterId} {
       allow read, write: if false;

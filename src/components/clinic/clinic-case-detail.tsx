@@ -417,7 +417,7 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
                 <p className="text-xs text-violet-800">
                   หรือจัดการทั้งหมดได้ที่{" "}
                   <a href="/clinic/animals" className="font-medium underline">
-                    หน้ารอศูนย์พักพิง
+                    หน้าหาบ้านให้สัตว์ (คลินิก)
                   </a>
                 </p>
                 <Textarea
