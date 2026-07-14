@@ -70,6 +70,8 @@ function mapCase(id: string, data: FirebaseFirestore.DocumentData): RescueCase {
     acceptedAt: data.acceptedAt ? toDate(data.acceptedAt) : undefined,
     closedAt: data.closedAt ? toDate(data.closedAt) : undefined,
     placementStatus: data.placementStatus ?? null,
+    donationGoal: data.donationGoal ?? 5000,
+    donationTotal: data.donationTotal ?? 0,
   };
 }
 
@@ -205,6 +207,8 @@ export async function createCase(data: CreateCaseData): Promise<RescueCase> {
     status: "NEW",
     createdAt: now,
     updatedAt: now,
+    donationGoal: 5000,
+    donationTotal: 0,
   };
 
   await db
@@ -632,4 +636,41 @@ export async function getClinicDashboard(
     recentCases: cases.slice(0, 5),
     urgentCases: cases.filter((c) => c.status === "NEW").slice(0, 5),
   };
+}
+
+/** บันทึกบริจาค — user โอน PromptPay แล้วกดยืนยันในเว็บ */
+export async function addDonation(
+  caseNumber: string,
+  amount: number,
+  donorName?: string
+): Promise<{ donationTotal: number; donationGoal: number }> {
+  if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
+    throw new Error("จำนวนเงินไม่ถูกต้อง");
+  }
+
+  const rescueCase = await getCaseByNumber(caseNumber);
+  if (!rescueCase) throw new Error("ไม่พบเคสนี้");
+  if (rescueCase.status === "CLOSED") {
+    throw new Error("เคสปิดแล้ว ไม่รับบริจาค");
+  }
+
+  const db = getDb();
+  const now = new Date();
+  const goal = rescueCase.donationGoal ?? 5000;
+  const newTotal = (rescueCase.donationTotal ?? 0) + amount;
+
+  await db.collection("donations").add({
+    caseNumber,
+    caseId: rescueCase.id,
+    amount,
+    donorName: donorName?.trim() || "ไม่ระบุชื่อ",
+    createdAt: Timestamp.fromDate(now),
+  });
+
+  await db.collection("cases").doc(rescueCase.id).update({
+    donationTotal: newTotal,
+    updatedAt: Timestamp.fromDate(now),
+  });
+
+  return { donationTotal: newTotal, donationGoal: goal };
 }

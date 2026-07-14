@@ -3,7 +3,11 @@ import { getCaseImageUrls } from "@/lib/case-images";
 import { PublicLayout } from "@/components/layout";
 import { CaseTrackingLive } from "@/components/tracking/case-tracking-live";
 import { getCaseByNumber, getCaseTimeline } from "@/lib/server/case-store";
-import { CASE_STATUS_LABELS, ANIMAL_CONDITIONS, getCaseStatusLabel } from "@/lib/constants";
+import {
+  ANIMAL_CONDITIONS,
+  findDemoClinic,
+  getCaseStatusLabel,
+} from "@/lib/constants";
 
 export const metadata = {
   title: "ติดตามเคส | Animal Rescue System",
@@ -22,6 +26,12 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
     ? ANIMAL_CONDITIONS.find((c) => c.value === rescueCase.condition)?.labelTh ?? null
     : null;
   const imageUrls = rescueCase ? getCaseImageUrls(rescueCase) : [];
+  const clinic = rescueCase
+    ? findDemoClinic({
+        clinicId: rescueCase.clinicId,
+        province: rescueCase.province,
+      })
+    : undefined;
 
   return (
     <PublicLayout>
@@ -30,6 +40,11 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
         <p className="mt-1 break-all font-mono text-sm text-emerald-700 sm:text-base">
           {caseNumber}
         </p>
+        {rescueCase && rescueCase.status !== "CLOSED" && (
+          <p className="mt-2 text-sm text-amber-800">
+            เงินบริจาคช่วยค่ารักษาอยู่ด้านล่าง — หรือทัก LINE คลินิกได้ถ้าต้องการติดต่อด่วน
+          </p>
+        )}
 
         {rescueCase ? (
           <CaseTrackingLive
@@ -41,6 +56,8 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
               createdAt: rescueCase.createdAt.toISOString(),
               description: rescueCase.description,
               province: rescueCase.province,
+              donationGoal: rescueCase.donationGoal ?? 5000,
+              donationTotal: rescueCase.donationTotal ?? 0,
             }}
             initialTimeline={timeline.map((e) => ({
               ...e,
@@ -48,6 +65,8 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
             }))}
             conditionLabel={conditionLabel}
             imageUrls={imageUrls}
+            clinicName={clinic?.clinicName ?? null}
+            clinicLineId={clinic?.lineId ?? null}
           />
         ) : (
           <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-6 text-amber-800">

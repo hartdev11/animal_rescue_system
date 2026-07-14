@@ -7,7 +7,6 @@ import { RoleSelection, type SelectedRole } from "./role-selection";
 import type { UserAuthMode } from "./user-auth-badge";
 import { UserLanding } from "./user-landing";
 import { ClinicLanding } from "./clinic-landing";
-import type { PlatformStatistics } from "@/types";
 
 const UserAuthModal = dynamic(
   () => import("./user-auth-modal").then((m) => m.UserAuthModal),
@@ -17,11 +16,7 @@ const UserAuthModal = dynamic(
 const ROLE_KEY = "ars-selected-role";
 const AUTH_KEY = "ars-user-auth-mode";
 
-interface HomePageClientProps {
-  stats: PlatformStatistics;
-}
-
-export function HomePageClient({ stats }: HomePageClientProps) {
+export function HomePageClient() {
   const [role, setRole] = useState<SelectedRole | null>(null);
   const [authMode, setAuthMode] = useState<UserAuthMode | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -88,7 +83,6 @@ export function HomePageClient({ stats }: HomePageClientProps) {
     >
       {role === "user" && (
         <UserLanding
-          stats={stats}
           authMode={authMode}
           onOpenAuthModal={() => setShowAuthModal(true)}
         />

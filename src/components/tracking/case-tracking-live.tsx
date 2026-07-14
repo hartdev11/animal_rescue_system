@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Radio } from "lucide-react";
 import { ImageGallery } from "@/components/ui/image-gallery";
 import { CaseTimeline } from "@/components/tracking/case-timeline";
+import { CaseDonation } from "@/components/tracking/case-donation";
+import { CaseLineContact } from "@/components/tracking/case-line-contact";
 import { CaseStatusBadge } from "@/components/tracking/case-status-badge";
 import { CASE_STATUS_STYLES } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
@@ -29,6 +31,8 @@ interface TrackingCase {
   createdAt: string;
   description: string;
   province: string;
+  donationGoal: number;
+  donationTotal: number;
 }
 
 interface CaseTrackingLiveProps {
@@ -37,6 +41,8 @@ interface CaseTrackingLiveProps {
   initialTimeline: SerializedTimelineEvent[];
   conditionLabel: string | null;
   imageUrls: string[];
+  clinicName?: string | null;
+  clinicLineId?: string | null;
 }
 
 function toTimelineEvents(rows: SerializedTimelineEvent[]): CaseTimelineEvent[] {
@@ -52,6 +58,8 @@ export function CaseTrackingLive({
   initialTimeline,
   conditionLabel,
   imageUrls,
+  clinicName,
+  clinicLineId,
 }: CaseTrackingLiveProps) {
   const [caseData, setCaseData] = useState(initialCase);
   const [timeline, setTimeline] = useState(() => toTimelineEvents(initialTimeline));
@@ -72,6 +80,8 @@ export function CaseTrackingLive({
       createdAt: string;
       description: string;
       province: string;
+      donationGoal?: number;
+      donationTotal?: number;
       timeline?: SerializedTimelineEvent[];
     }>;
   }, [caseNumber]);
@@ -84,6 +94,8 @@ export function CaseTrackingLive({
       createdAt: string;
       description: string;
       province: string;
+      donationGoal?: number;
+      donationTotal?: number;
       timeline?: SerializedTimelineEvent[];
     }) => {
       const nextTimeline = toTimelineEvents(data.timeline ?? []);
@@ -94,6 +106,8 @@ export function CaseTrackingLive({
         createdAt: data.createdAt,
         description: data.description,
         province: data.province,
+        donationGoal: data.donationGoal ?? 5000,
+        donationTotal: data.donationTotal ?? 0,
       };
 
       const statusChanged = prevStatusRef.current !== nextCase.status;
@@ -144,6 +158,24 @@ export function CaseTrackingLive({
 
   return (
     <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
+      {clinicName && clinicLineId && (
+        <CaseLineContact
+          caseNumber={caseNumber}
+          clinicName={clinicName}
+          lineId={clinicLineId}
+        />
+      )}
+
+      <CaseDonation
+        caseNumber={caseNumber}
+        goal={caseData.donationGoal}
+        total={caseData.donationTotal}
+        closed={caseData.status === "CLOSED"}
+        onDonated={(newTotal) =>
+          setCaseData((prev) => ({ ...prev, donationTotal: newTotal }))
+        }
+      />
+
       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <div className="flex items-center gap-1.5">
           <Radio className="h-3.5 w-3.5 shrink-0 animate-pulse text-emerald-500" />

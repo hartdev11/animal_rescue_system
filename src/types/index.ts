@@ -18,6 +18,8 @@ export interface Clinic {
   province: string;
   address?: string;
   phone?: string;
+  /** LINE Official Account Basic ID เช่น @animalrescue */
+  lineId?: string;
   email?: string;
   isActive: boolean;
   createdAt: Date;
@@ -71,6 +73,10 @@ export interface RescueCase {
   closedAt?: Date;
   /** สถานะการจัดหาที่พัก — ใช้หลังฟื้นตัว */
   placementStatus?: PlacementStatus | null;
+  /** เป้าหมายบริจาคค่ารักษา (บาท) */
+  donationGoal?: number;
+  /** ยอดบริจาคที่ได้รับแล้ว (บาท) */
+  donationTotal?: number;
 }
 
 export type TreatmentReportType = "STABLE" | "CRITICAL" | "DECEASED";

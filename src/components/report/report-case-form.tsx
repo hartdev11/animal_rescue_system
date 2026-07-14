@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   MapPin,
   Loader2,
-  AlertCircle,
   CheckCircle2,
   Send,
   User,
@@ -38,13 +37,11 @@ export function ReportCaseForm() {
     latitude,
     longitude,
     error: locationError,
-    permissionState,
     requestLocation,
     setManualLocation,
     clearLocation,
     hasLocation,
     loading: locationLoading,
-    isSecureContext,
   } = useGeolocation();
 
   const [useManualMode, setUseManualMode] = useState(false);
@@ -147,23 +144,6 @@ export function ReportCaseForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Permissions info */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base text-amber-900">
-            <AlertCircle className="h-5 w-5" />
-            การขออนุญาตที่จำเป็น
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-amber-800">
-          <p>• <strong>กล้อง/คลังรูป</strong> — อัปโหลดรูปสัตว์ได้สูงสุด 5 รูป</p>
-          <p>• <strong>ตำแหน่ง GPS</strong> — เพื่อส่งพิกัดให้คลินิกหาสถานที่ได้แม่นยำ</p>
-          <p className="text-xs text-amber-700">
-            ระบบจะขออนุญาตเมื่อคุณกดปุ่มถ่ายรูปหรือขอตำแหน่งเท่านั้น
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Photo */}
       <Card>
         <CardHeader className="pb-3">
@@ -293,23 +273,22 @@ export function ReportCaseForm() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!isSecureContext && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              ⚠️ คุณเปิดเว็บผ่าน IP address — GPS อาจไม่ทำงาน
-              กรุณาใช้ <strong>http://localhost:3000</strong> แทน
-            </div>
-          )}
-
           {hasLocation && latitude !== null && longitude !== null ? (
             <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
               <div className="flex-1">
-                <p className="font-medium text-emerald-800">
-                  {permissionState === "manual" ? "ระบุตำแหน่งด้วยตนเองแล้ว" : "ได้รับตำแหน่งแล้ว"}
-                </p>
+                <p className="font-medium text-emerald-800">ได้รับตำแหน่งแล้ว</p>
                 <p className="mt-1 font-mono text-sm text-emerald-700">
                   {latitude.toFixed(6)}, {longitude.toFixed(6)}
                 </p>
+                <a
+                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-xs text-emerald-700 underline"
+                >
+                  ดูบน Google Maps
+                </a>
                 <button
                   type="button"
                   onClick={() => {
@@ -317,7 +296,7 @@ export function ReportCaseForm() {
                     setUseManualMode(false);
                     setManualCoords("");
                   }}
-                  className="mt-2 text-xs text-emerald-600 hover:underline"
+                  className="mt-2 block text-xs text-emerald-600 hover:underline"
                 >
                   ล้างตำแหน่ง
                 </button>
@@ -343,7 +322,7 @@ export function ReportCaseForm() {
                 <Loader2 className="h-4 w-4 animate-spin" />
                 กำลังขอตำแหน่ง...
               </>
-            ) : hasLocation && permissionState !== "manual" ? (
+            ) : hasLocation ? (
               <>
                 <MapPin className="h-4 w-4" />
                 อัปเดตตำแหน่งอีกครั้ง
@@ -351,7 +330,7 @@ export function ReportCaseForm() {
             ) : (
               <>
                 <MapPin className="h-4 w-4" />
-                ขออนุญาตใช้ตำแหน่ง
+                ขออนุญาตใช้ตำแหน่ง (GPS)
               </>
             )}
           </Button>

@@ -10,6 +10,13 @@ import type {
 
 export const APP_NAME = "Animal Rescue System";
 
+/** เป้าหมายบริจาคเริ่มต้นต่อเคส (บาท) */
+export const DEFAULT_DONATION_GOAL = 5000;
+
+/** เลขพร้อมเพย์รับบริจาค — ตั้งใน .env.local เป็น NEXT_PUBLIC_PROMPTPAY_ID */
+export const PROMPTPAY_ID =
+  process.env.NEXT_PUBLIC_PROMPTPAY_ID ?? "0812345678";
+
 export const ANIMAL_SPECIES: {
   value: AnimalSpecies;
   label: string;
@@ -338,13 +345,70 @@ export const DEMO_CLINICS = [
     id: DEMO_CLINIC_ID,
     clinicName: "คลินิกสัตวแพทย์กรุงเทพ (Demo)",
     province: "กรุงเทพมหานคร",
+    /** LINE OA จริง — AnimalRescueSystem */
+    lineId: "@816nyxpw",
   },
   {
     id: "clinic-saraburi",
     clinicName: "คลินิกสัตวแพทย์สระบุรี (Demo)",
     province: "สระบุรี",
+    /** ใช้ OA เดียวกันชั่วคราวจนกว่าจะมี OA แยกจังหวัด */
+    lineId: "@816nyxpw",
   },
 ] as const;
+
+export type DemoClinic = (typeof DEMO_CLINICS)[number];
+
+/** หาคลินิกจาก province หรือ clinicId */
+export function findDemoClinic(options: {
+  province?: string | null;
+  clinicId?: string | null;
+}): DemoClinic | undefined {
+  const { province, clinicId } = options;
+  if (clinicId) {
+    const byId = DEMO_CLINICS.find((c) => c.id === clinicId);
+    if (byId) return byId;
+  }
+  if (province) {
+    const normalized = province.trim().normalize("NFC");
+    return DEMO_CLINICS.find((c) => c.province.normalize("NFC") === normalized);
+  }
+  return undefined;
+}
+
+/** ข้อความเริ่มต้นตอนทัก LINE OA */
+export function buildClinicLineMessage(caseNumber: string): string {
+  return `สวัสดีครับ/ค่ะ ต้องการติดต่อเรื่องเคส ${caseNumber}`;
+}
+
+function normalizeLineId(lineId: string): string {
+  return lineId.startsWith("@") ? lineId : `@${lineId}`;
+}
+
+/**
+ * Deep link เปิดแอป LINE โดยตรง (มือถือ/เดสก์ท็อปที่มีแอป)
+ * ใช้บัญชี LINE ที่ล็อกอินอยู่ในเครื่องนั้นคุยกับ OA คลินิก
+ */
+export function buildClinicLineAppUrl(lineId: string, caseNumber: string): string {
+  const id = normalizeLineId(lineId);
+  const text = encodeURIComponent(buildClinicLineMessage(caseNumber));
+  return `line://oaMessage/${id}/?text=${text}`;
+}
+
+/**
+ * Universal / web link — ถ้ามีแอป LINE จะเปิดแอป, ไม่มีจะเปิดหน้า LINE บนเว็บ
+ */
+export function buildClinicLineWebUrl(lineId: string, caseNumber: string): string {
+  const id = normalizeLineId(lineId);
+  const text = encodeURIComponent(buildClinicLineMessage(caseNumber));
+  // ไม่ encode @ ใน path — LINE ต้องการรูปแบบ /R/oaMessage/@id/
+  return `https://line.me/R/oaMessage/${id}/?text=${text}`;
+}
+
+/** @deprecated ใช้ buildClinicLineWebUrl / buildClinicLineAppUrl */
+export function buildClinicLineUrl(lineId: string, caseNumber: string): string {
+  return buildClinicLineWebUrl(lineId, caseNumber);
+}
 
 export const DEMO_SHELTERS = [
   {
