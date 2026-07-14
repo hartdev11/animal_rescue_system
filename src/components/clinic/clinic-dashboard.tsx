@@ -29,10 +29,11 @@ import {
   CASE_STATUS_FLOW,
   CASE_STATUS_LABELS,
   CASE_STATUS_STYLES,
+  getSpeciesLabel,
 } from "@/lib/constants";
 import { getCaseImageUrls } from "@/lib/case-images";
 import { cn, formatDate, formatPhoneNumber } from "@/lib/utils";
-import type { CaseStatus, RescueCase } from "@/types";
+import type { AnimalSpecies, CaseStatus, RescueCase } from "@/types";
 
 const POLL_MS = 30_000;
 
@@ -213,7 +214,8 @@ function CaseMiniRow({ c, detailed }: { c: CaseRow; detailed?: boolean }) {
           )}
         </div>
         <p className="mt-0.5 truncate text-xs text-gray-600">
-          {condition?.labelTh} • {c.province}
+          {condition?.labelTh}
+          {c.species ? ` • ${getSpeciesLabel(c.species as AnimalSpecies)}` : ""} • {c.province}
         </p>
         {detailed ? (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">

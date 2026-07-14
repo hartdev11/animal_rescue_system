@@ -1,7 +1,12 @@
 import { z } from "zod";
-import { ANIMAL_CONDITIONS } from "@/lib/constants";
+import { ANIMAL_CONDITIONS, ANIMAL_SPECIES } from "@/lib/constants";
 
 const conditionValues = ANIMAL_CONDITIONS.map((c) => c.value) as [
+  string,
+  ...string[],
+];
+
+const speciesValues = ANIMAL_SPECIES.map((s) => s.value) as [
   string,
   ...string[],
 ];
@@ -18,6 +23,10 @@ export const reportCaseSchema = z.object({
     .max(15, "เบอร์โทรศัพท์ไม่ถูกต้อง")
     .regex(/^[0-9+\-\s()]+$/, "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง"),
   wantsToAdopt: z.boolean(),
+  species: z.enum(speciesValues as [string, ...string[]], {
+    required_error: "กรุณาเลือกประเภทสัตว์",
+    invalid_type_error: "กรุณาเลือกประเภทสัตว์",
+  }),
   condition: z.enum(conditionValues as [string, ...string[]]),
   description: z
     .string()

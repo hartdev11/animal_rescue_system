@@ -21,12 +21,24 @@ export const ANIMAL_SPECIES: {
   value: AnimalSpecies;
   label: string;
   icon: string;
+  /** คำค้นหาเพิ่ม เช่น หมา dog */
+  aliases: string[];
 }[] = [
-  { value: "DOG", label: "สุนัข", icon: "🐕" },
-  { value: "CAT", label: "แมว", icon: "🐈" },
-  { value: "RABBIT", label: "กระต่าย", icon: "🐇" },
-  { value: "BIRD", label: "นก", icon: "🐦" },
-  { value: "OTHER", label: "อื่นๆ", icon: "🐾" },
+  { value: "DOG", label: "สุนัข", icon: "🐕", aliases: ["หมา", "dog", "สุนัข", "โฮ่ง"] },
+  { value: "CAT", label: "แมว", icon: "🐈", aliases: ["cat", "แมว", "เหมียว", "น้อล"] },
+  {
+    value: "RABBIT",
+    label: "กระต่าย",
+    icon: "🐇",
+    aliases: ["กระต่าย", "rabbit", "bunny", "กระตาย"],
+  },
+  { value: "BIRD", label: "นก", icon: "🐦", aliases: ["bird", "นก", "นกแก้ว"] },
+  {
+    value: "OTHER",
+    label: "อื่นๆ",
+    icon: "🐾",
+    aliases: ["อื่นๆ", "other", "สัตว์อื่น"],
+  },
 ];
 
 export function getSpeciesLabel(species: AnimalSpecies): string {
@@ -35,6 +47,30 @@ export function getSpeciesLabel(species: AnimalSpecies): string {
 
 export function getSpeciesIcon(species: AnimalSpecies): string {
   return ANIMAL_SPECIES.find((s) => s.value === species)?.icon ?? "🐾";
+}
+
+/** กรองชนิดสัตว์จากข้อความพิมพ์ (หมา / แมว / dog …) */
+export function matchSpeciesQuery(query: string): typeof ANIMAL_SPECIES {
+  const q = query.trim().toLowerCase().normalize("NFC");
+  if (!q) return ANIMAL_SPECIES;
+  return ANIMAL_SPECIES.filter((s) => {
+    const hay = [s.label, s.value, ...s.aliases].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+export function resolveSpeciesFromQuery(query: string): AnimalSpecies | null {
+  const q = query.trim().toLowerCase().normalize("NFC");
+  if (!q) return null;
+  const exact = ANIMAL_SPECIES.find(
+    (s) =>
+      s.value.toLowerCase() === q ||
+      s.label.toLowerCase() === q ||
+      s.aliases.some((a) => a.toLowerCase() === q)
+  );
+  if (exact) return exact.value;
+  const matched = matchSpeciesQuery(q);
+  return matched.length === 1 ? matched[0]!.value : null;
 }
 
 export const TEMPERAMENT_TRAITS: {
@@ -376,38 +412,71 @@ export function findDemoClinic(options: {
   return undefined;
 }
 
-/** ข้อความเริ่มต้นตอนทัก LINE OA */
-export function buildClinicLineMessage(caseNumber: string): string {
-  return `สวัสดีครับ/ค่ะ ต้องการติดต่อเรื่องเคส ${caseNumber}`;
-}
-
 function normalizeLineId(lineId: string): string {
   return lineId.startsWith("@") ? lineId : `@${lineId}`;
 }
 
-/**
- * Deep link เปิดแอป LINE โดยตรง (มือถือ/เดสก์ท็อปที่มีแอป)
- * ใช้บัญชี LINE ที่ล็อกอินอยู่ในเครื่องนั้นคุยกับ OA คลินิก
- */
-export function buildClinicLineAppUrl(lineId: string, caseNumber: string): string {
-  const id = normalizeLineId(lineId);
-  const text = encodeURIComponent(buildClinicLineMessage(caseNumber));
-  return `line://oaMessage/${id}/?text=${text}`;
+/** ข้อความสำเร็จรูปสำหรับวางในแชท LINE แล้วกดส่ง — ไม่มีคำว่า text= */
+export function buildClinicLineMessage(options: {
+  caseNumber: string;
+  speciesLabel?: string | null;
+  reportedAt?: Date | string | null;
+}): string {
+  // บรรทัดหลักตามที่ user ต้องการส่งในแชท
+  let message = `สวัสดีครับ/ค่ะ ต้องการติดต่อเรื่องเคส ${options.caseNumber}`;
+
+  // รายละเอียดเสริม (ไม่มี prefix text=)
+  const extras: string[] = [];
+  if (options.speciesLabel) {
+    extras.push(`ชนิดสัตว์: ${options.speciesLabel}`);
+  }
+  if (options.reportedAt) {
+    const date =
+      options.reportedAt instanceof Date
+        ? options.reportedAt
+        : new Date(options.reportedAt);
+    if (!Number.isNaN(date.getTime())) {
+      extras.push(`แจ้งเมื่อ: ${formatDateForLine(date)}`);
+    }
+  }
+  if (extras.length > 0) {
+    message = `${message}\n${extras.join("\n")}`;
+  }
+
+  // กันกรณีข้อความเก่า/คลิปบอร์ดมี text= ติดมา
+  return message.replace(/^text=/i, "").trim();
+}
+
+function formatDateForLine(date: Date): string {
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 /**
- * Universal / web link — ถ้ามีแอป LINE จะเปิดแอป, ไม่มีจะเปิดหน้า LINE บนเว็บ
+ * Deep link เปิดแอป LINE โดยตรงเข้าแชท OA
+ * ข้อความให้คัดลอกแล้ววางในแชท — ไม่ใส่ ?text= เพื่อกันบั๊กแสดงคำว่า text=
  */
-export function buildClinicLineWebUrl(lineId: string, caseNumber: string): string {
+export function buildClinicLineAppUrl(lineId: string): string {
   const id = normalizeLineId(lineId);
-  const text = encodeURIComponent(buildClinicLineMessage(caseNumber));
-  // ไม่ encode @ ใน path — LINE ต้องการรูปแบบ /R/oaMessage/@id/
-  return `https://line.me/R/oaMessage/${id}/?text=${text}`;
+  return `line://ti/p/${id}`;
 }
 
-/** @deprecated ใช้ buildClinicLineWebUrl / buildClinicLineAppUrl */
-export function buildClinicLineUrl(lineId: string, caseNumber: string): string {
-  return buildClinicLineWebUrl(lineId, caseNumber);
+/**
+ * Universal / web link — เปิดแชท OA
+ */
+export function buildClinicLineWebUrl(lineId: string): string {
+  const id = normalizeLineId(lineId);
+  return `https://line.me/R/ti/p/${id}`;
+}
+
+/** @deprecated */
+export function buildClinicLineUrl(lineId: string): string {
+  return buildClinicLineWebUrl(lineId);
 }
 
 export const DEMO_SHELTERS = [

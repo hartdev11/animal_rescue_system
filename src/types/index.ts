@@ -60,6 +60,8 @@ export interface RescueCase {
   reporterName: string;
   phoneNumber: string;
   wantsToAdopt: boolean;
+  /** ชนิดสัตว์ที่ผู้แจ้งระบุ */
+  species?: AnimalSpecies | null;
   condition: AnimalCondition;
   description: string;
   imageUrls: string[];

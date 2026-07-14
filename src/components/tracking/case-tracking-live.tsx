@@ -40,6 +40,7 @@ interface CaseTrackingLiveProps {
   initialCase: TrackingCase;
   initialTimeline: SerializedTimelineEvent[];
   conditionLabel: string | null;
+  speciesLabel?: string | null;
   imageUrls: string[];
   clinicName?: string | null;
   clinicLineId?: string | null;
@@ -57,6 +58,7 @@ export function CaseTrackingLive({
   initialCase,
   initialTimeline,
   conditionLabel,
+  speciesLabel,
   imageUrls,
   clinicName,
   clinicLineId,
@@ -163,6 +165,8 @@ export function CaseTrackingLive({
           caseNumber={caseNumber}
           clinicName={clinicName}
           lineId={clinicLineId}
+          speciesLabel={speciesLabel}
+          reportedAt={caseData.createdAt}
         />
       )}
 
@@ -217,6 +221,12 @@ export function CaseTrackingLive({
       )}
 
       <div className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2 sm:gap-4 sm:p-6">
+        {speciesLabel && (
+          <div>
+            <p className="text-sm text-muted-foreground">ประเภทสัตว์</p>
+            <p className="font-medium">{speciesLabel}</p>
+          </div>
+        )}
         <div>
           <p className="text-sm text-muted-foreground">อาการ</p>
           <p className="font-medium">{conditionLabel}</p>
@@ -224,6 +234,10 @@ export function CaseTrackingLive({
         <div>
           <p className="text-sm text-muted-foreground">จังหวัด</p>
           <p className="font-medium">{caseData.province}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">แจ้งเมื่อ</p>
+          <p className="font-medium">{formatDate(new Date(caseData.createdAt))}</p>
         </div>
         <div className="sm:col-span-2">
           <p className="text-sm text-muted-foreground">รายละเอียด</p>

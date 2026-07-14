@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PublicLayout } from "@/components/layout";
 import { CaseLineContact } from "@/components/tracking/case-line-contact";
-import { findDemoClinic } from "@/lib/constants";
+import { findDemoClinic, getSpeciesLabel } from "@/lib/constants";
 import { getCaseByNumber } from "@/lib/server/case-store";
 
 export const metadata = {
@@ -53,6 +53,10 @@ export default async function ReportSuccessPage({ searchParams }: SuccessPagePro
               caseNumber={caseNumber}
               clinicName={clinic.clinicName}
               lineId={clinic.lineId}
+              speciesLabel={
+                rescueCase?.species ? getSpeciesLabel(rescueCase.species) : null
+              }
+              reportedAt={rescueCase?.createdAt?.toISOString() ?? null}
             />
           </div>
         )}

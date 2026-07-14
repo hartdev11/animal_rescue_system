@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ANIMAL_CONDITIONS } from "@/lib/constants";
+import { ANIMAL_CONDITIONS, ANIMAL_SPECIES } from "@/lib/constants";
 import { MAX_CASE_IMAGES } from "@/lib/case-images";
 import { createCase, type CreateCaseImageFile } from "@/lib/server/case-store";
-import type { AnimalCondition } from "@/types";
+import type { AnimalCondition, AnimalSpecies } from "@/types";
 
 const conditionValues = ANIMAL_CONDITIONS.map((c) => c.value);
+const speciesValues = ANIMAL_SPECIES.map((s) => s.value);
 
 const bodySchema = z.object({
   reporterName: z.string().trim().min(1).max(100),
@@ -13,6 +14,7 @@ const bodySchema = z.object({
   wantsToAdopt: z
     .enum(["true", "false"])
     .transform((v) => v === "true"),
+  species: z.enum(speciesValues as [string, ...string[]]),
   condition: z.enum(conditionValues as [string, ...string[]]),
   description: z.string().min(10).max(1000),
   province: z.string().min(1),
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
       reporterName: formData.get("reporterName"),
       phoneNumber: formData.get("phoneNumber"),
       wantsToAdopt: formData.get("wantsToAdopt") ?? "false",
+      species: formData.get("species"),
       condition: formData.get("condition"),
       description: formData.get("description"),
       province: formData.get("province"),
@@ -71,6 +74,7 @@ export async function POST(request: Request) {
 
     const rescueCase = await createCase({
       ...parsed.data,
+      species: parsed.data.species as AnimalSpecies,
       condition: parsed.data.condition as AnimalCondition,
       imageFiles: await toImageFiles(imageFiles),
     });

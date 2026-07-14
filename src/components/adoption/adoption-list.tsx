@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, Loader2, MapPin, PawPrint } from "lucide-react";
+import { Building2, Loader2, MapPin, PawPrint, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ANIMAL_SPECIES } from "@/lib/constants";
+import { ANIMAL_SPECIES, matchSpeciesQuery, resolveSpeciesFromQuery } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AnimalSpecies } from "@/types";
 
@@ -42,6 +43,7 @@ export function AdoptionList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [speciesFilter, setSpeciesFilter] = useState<SpeciesFilter>("ALL");
+  const [speciesQuery, setSpeciesQuery] = useState("");
   const [shelterFilter, setShelterFilter] = useState<ShelterFilter>("ALL");
 
   const loadData = useCallback(async () => {
@@ -94,12 +96,42 @@ export function AdoptionList() {
       list = list.filter((a) => a.shelterId === shelterFilter);
     }
 
-    if (speciesFilter !== "ALL") {
-      list = list.filter((a) => a.species === speciesFilter);
+    const fromQuery = resolveSpeciesFromQuery(speciesQuery);
+    const activeSpecies =
+      speciesQuery.trim().length > 0
+        ? fromQuery
+        : speciesFilter === "ALL"
+          ? null
+          : speciesFilter;
+
+    if (speciesQuery.trim().length > 0) {
+      if (fromQuery) {
+        list = list.filter((a) => a.species === fromQuery);
+      } else {
+        const matched = new Set(matchSpeciesQuery(speciesQuery).map((s) => s.value));
+        if (matched.size > 0) {
+          list = list.filter((a) => matched.has(a.species));
+        } else {
+          const q = speciesQuery.trim().toLowerCase();
+          list = list.filter(
+            (a) =>
+              a.speciesLabel.toLowerCase().includes(q) ||
+              a.name.toLowerCase().includes(q) ||
+              (a.breed?.toLowerCase().includes(q) ?? false)
+          );
+        }
+      }
+    } else if (activeSpecies) {
+      list = list.filter((a) => a.species === activeSpecies);
     }
 
     return list;
-  }, [animals, shelterFilter, speciesFilter]);
+  }, [animals, shelterFilter, speciesFilter, speciesQuery]);
+
+  const speciesChipOptions = useMemo(
+    () => matchSpeciesQuery(speciesQuery),
+    [speciesQuery]
+  );
 
   const speciesCounts = useMemo(() => {
     const base =
@@ -154,24 +186,48 @@ export function AdoptionList() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <FilterChip
-          active={speciesFilter === "ALL"}
-          onClick={() => setSpeciesFilter("ALL")}
-          label="ทั้งหมด"
-          count={speciesCounts.ALL ?? 0}
-          icon="🐾"
-        />
-        {ANIMAL_SPECIES.map((s) => (
-          <FilterChip
-            key={s.value}
-            active={speciesFilter === s.value}
-            onClick={() => setSpeciesFilter(s.value)}
-            label={s.label}
-            count={speciesCounts[s.value] ?? 0}
-            icon={s.icon}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={speciesQuery}
+            onChange={(e) => {
+              const next = e.target.value;
+              setSpeciesQuery(next);
+              const resolved = resolveSpeciesFromQuery(next);
+              if (resolved) setSpeciesFilter(resolved);
+              if (!next.trim()) setSpeciesFilter("ALL");
+            }}
+            placeholder="พิมพ์ค้นหาชนิดสัตว์ เช่น หมา แมว กระต่าย..."
+            className="pl-9"
           />
-        ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <FilterChip
+            active={speciesFilter === "ALL" && !speciesQuery.trim()}
+            onClick={() => {
+              setSpeciesFilter("ALL");
+              setSpeciesQuery("");
+            }}
+            label="ทั้งหมด"
+            count={speciesCounts.ALL ?? 0}
+            icon="🐾"
+          />
+          {speciesChipOptions.map((s) => (
+            <FilterChip
+              key={s.value}
+              active={speciesFilter === s.value}
+              onClick={() => {
+                setSpeciesFilter(s.value);
+                setSpeciesQuery("");
+              }}
+              label={s.label}
+              count={speciesCounts[s.value] ?? 0}
+              icon={s.icon}
+            />
+          ))}
+        </div>
       </div>
 
       {error && (

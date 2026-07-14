@@ -1,6 +1,7 @@
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import type {
   AnimalCondition,
+  AnimalSpecies,
   CaseStatus,
   CaseTimelineEvent,
   PlacementStatus,
@@ -29,6 +30,7 @@ export interface CreateCaseData {
   reporterName: string;
   phoneNumber: string;
   wantsToAdopt: boolean;
+  species: AnimalSpecies;
   condition: AnimalCondition;
   description: string;
   imageFiles?: CreateCaseImageFile[];
@@ -58,6 +60,7 @@ function mapCase(id: string, data: FirebaseFirestore.DocumentData): RescueCase {
     reporterName: data.reporterName ?? "",
     phoneNumber: data.phoneNumber,
     wantsToAdopt: Boolean(data.wantsToAdopt),
+    species: (data.species as AnimalSpecies | undefined) ?? null,
     condition: data.condition,
     description: data.description,
     imageUrls: data.imageUrls ?? [],
@@ -198,6 +201,7 @@ export async function createCase(data: CreateCaseData): Promise<RescueCase> {
     reporterName: data.reporterName.trim(),
     phoneNumber: data.phoneNumber,
     wantsToAdopt: data.wantsToAdopt,
+    species: data.species,
     condition: data.condition,
     description: data.description,
     imageUrls,

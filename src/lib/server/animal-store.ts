@@ -331,7 +331,7 @@ export async function ensureDraftAnimalFromCase(
     caseNumber: rescueCase.caseNumber,
     clinicId,
     shelterId,
-    species: "OTHER",
+    species: rescueCase.species ?? "OTHER",
     name: defaultDraftName(rescueCase.caseNumber),
     gender: "UNKNOWN",
     estimatedAge: "ไม่ทราบ",

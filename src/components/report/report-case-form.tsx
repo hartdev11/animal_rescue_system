@@ -20,11 +20,12 @@ import {
   ImageUploadGrid,
   type ImagePreviewItem,
 } from "@/components/report/image-upload-grid";
+import { SpeciesSearchSelect } from "@/components/report/species-search-select";
 import { ANIMAL_CONDITIONS, THAI_PROVINCES } from "@/lib/constants";
 import { reportCaseSchema, type ReportCaseFormData } from "@/lib/validations/schemas";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { parseCoordinates } from "@/lib/utils";
-import type { AnimalCondition } from "@/types";
+import type { AnimalCondition, AnimalSpecies } from "@/types";
 
 export function ReportCaseForm() {
   const router = useRouter();
@@ -51,6 +52,8 @@ export function ReportCaseForm() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ReportCaseFormData>({
     resolver: zodResolver(reportCaseSchema),
@@ -58,6 +61,7 @@ export function ReportCaseForm() {
       reporterName: "",
       phoneNumber: "",
       wantsToAdopt: false,
+      species: undefined,
       condition: "EMERGENCY" as AnimalCondition,
       description: "",
       province: "",
@@ -65,6 +69,8 @@ export function ReportCaseForm() {
       longitude: 0,
     },
   });
+
+  const selectedSpecies = watch("species");
 
   const onSubmit = async (data: ReportCaseFormData) => {
     setSubmitError(null);
@@ -90,6 +96,7 @@ export function ReportCaseForm() {
       formData.append("reporterName", data.reporterName);
       formData.append("phoneNumber", data.phoneNumber);
       formData.append("wantsToAdopt", data.wantsToAdopt ? "true" : "false");
+      formData.append("species", data.species);
       formData.append("condition", data.condition);
       formData.append("description", data.description);
       formData.append("province", data.province);
@@ -226,6 +233,15 @@ export function ReportCaseForm() {
           </label>
         </CardContent>
       </Card>
+
+      <SpeciesSearchSelect
+        value={(selectedSpecies as AnimalSpecies | undefined) ?? ""}
+        onChange={(species) =>
+          setValue("species", species, { shouldValidate: true })
+        }
+        error={errors.species?.message}
+        required
+      />
 
       {/* Condition */}
       <div className="space-y-2">

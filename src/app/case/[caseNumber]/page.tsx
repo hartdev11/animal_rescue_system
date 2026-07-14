@@ -7,6 +7,7 @@ import {
   ANIMAL_CONDITIONS,
   findDemoClinic,
   getCaseStatusLabel,
+  getSpeciesLabel,
 } from "@/lib/constants";
 
 export const metadata = {
@@ -24,6 +25,9 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
 
   const conditionLabel = rescueCase
     ? ANIMAL_CONDITIONS.find((c) => c.value === rescueCase.condition)?.labelTh ?? null
+    : null;
+  const speciesLabel = rescueCase?.species
+    ? getSpeciesLabel(rescueCase.species)
     : null;
   const imageUrls = rescueCase ? getCaseImageUrls(rescueCase) : [];
   const clinic = rescueCase
@@ -64,6 +68,7 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
               createdAt: e.createdAt.toISOString(),
             }))}
             conditionLabel={conditionLabel}
+            speciesLabel={speciesLabel}
             imageUrls={imageUrls}
             clinicName={clinic?.clinicName ?? null}
             clinicLineId={clinic?.lineId ?? null}
