@@ -206,3 +206,27 @@ export async function uploadAnimalImages(
 
   return urls;
 }
+
+export async function uploadDonationSlip(
+  caseId: string,
+  file: { buffer: Buffer; mimeType: string }
+): Promise<string> {
+  const bucket = await getStorageBucket();
+  const ext = file.mimeType.includes("png")
+    ? "png"
+    : file.mimeType.includes("webp")
+      ? "webp"
+      : "jpg";
+  const filePath = `donations/${caseId}/${Date.now()}.${ext}`;
+  const token = randomUUID();
+
+  await bucket.file(filePath).save(file.buffer, {
+    metadata: {
+      contentType: file.mimeType,
+      metadata: { firebaseStorageDownloadTokens: token },
+    },
+  });
+
+  const encoded = encodeURIComponent(filePath);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encoded}?alt=media&token=${token}`;
+}

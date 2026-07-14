@@ -642,14 +642,36 @@ export async function getClinicDashboard(
   };
 }
 
-/** บันทึกบริจาค — user โอน PromptPay แล้วกดยืนยันในเว็บ */
-export async function addDonation(
-  caseNumber: string,
-  amount: number,
-  donorName?: string
-): Promise<{ donationTotal: number; donationGoal: number }> {
+/** บันทึกบริจาคหลังตรวจสลิปผ่านแล้วเท่านั้น */
+export async function addVerifiedDonation(options: {
+  caseNumber: string;
+  amount: number;
+  donorName?: string;
+  slipUrl?: string;
+  transRef: string;
+  status?: "VERIFIED" | "PENDING";
+  verifyMethod?: "clinic";
+}): Promise<{
+  donationTotal: number;
+  donationGoal: number;
+  status: "VERIFIED" | "PENDING";
+  donationId: string;
+}> {
+  const {
+    caseNumber,
+    amount,
+    donorName,
+    slipUrl,
+    transRef,
+    status = "VERIFIED",
+    verifyMethod = "clinic",
+  } = options;
+
   if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
     throw new Error("จำนวนเงินไม่ถูกต้อง");
+  }
+  if (!transRef.trim() && status === "VERIFIED") {
+    throw new Error("ไม่มีเลขอ้างอิงสลิป");
   }
 
   const rescueCase = await getCaseByNumber(caseNumber);
@@ -661,20 +683,129 @@ export async function addDonation(
   const db = getDb();
   const now = new Date();
   const goal = rescueCase.donationGoal ?? 5000;
-  const newTotal = (rescueCase.donationTotal ?? 0) + amount;
 
-  await db.collection("donations").add({
+  if (transRef.trim()) {
+    const dup = await db
+      .collection("donations")
+      .where("transRef", "==", transRef.trim())
+      .limit(1)
+      .get();
+    if (!dup.empty) {
+      throw new Error("สลิปนี้ถูกใช้ยืนยันไปแล้ว");
+    }
+  }
+
+  const donationRef = db.collection("donations").doc();
+  const base = {
     caseNumber,
     caseId: rescueCase.id,
     amount,
     donorName: donorName?.trim() || "ไม่ระบุชื่อ",
+    slipUrl: slipUrl ?? null,
+    transRef: transRef.trim() || `pending_${donationRef.id}`,
+    status,
+    verifyMethod,
     createdAt: Timestamp.fromDate(now),
+  };
+
+  let donationTotal = rescueCase.donationTotal ?? 0;
+
+  if (status === "VERIFIED") {
+    donationTotal += amount;
+    await donationRef.set({
+      ...base,
+      verifiedAt: Timestamp.fromDate(now),
+    });
+    await db.collection("cases").doc(rescueCase.id).update({
+      donationTotal,
+      updatedAt: Timestamp.fromDate(now),
+    });
+  } else {
+    await donationRef.set(base);
+  }
+
+  return {
+    donationTotal,
+    donationGoal: goal,
+    status,
+    donationId: donationRef.id,
+  };
+}
+
+/** @deprecated ใช้ addVerifiedDonation */
+export async function addDonation(
+  caseNumber: string,
+  amount: number,
+  donorName?: string
+): Promise<{ donationTotal: number; donationGoal: number }> {
+  void caseNumber;
+  void amount;
+  void donorName;
+  throw new Error("ไม่สามารถยืนยันเองได้ — ต้องอัปโหลดสลิปให้ระบบตรวจอัตโนมัติ");
+}
+
+export async function listPendingDonations(province?: string) {
+  const db = getDb();
+  const snap = await db
+    .collection("donations")
+    .where("status", "==", "PENDING")
+    .limit(50)
+    .get();
+
+  let rows = snap.docs.map((doc) => {
+    const d = doc.data();
+    return {
+      id: doc.id,
+      caseNumber: d.caseNumber as string,
+      caseId: d.caseId as string,
+      amount: d.amount as number,
+      donorName: d.donorName as string,
+      slipUrl: (d.slipUrl as string | null) ?? null,
+      createdAt: toDate(d.createdAt),
+    };
   });
 
+  if (province) {
+    const cases = await listCases({ province });
+    const ids = new Set(cases.map((c) => c.id));
+    rows = rows.filter((r) => ids.has(r.caseId));
+  }
+
+  return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export async function approveDonation(
+  donationId: string
+): Promise<{ donationTotal: number }> {
+  const db = getDb();
+  const ref = db.collection("donations").doc(donationId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error("ไม่พบรายการบริจาค");
+  const data = snap.data()!;
+  if (data.status === "VERIFIED") {
+    const rescueCase = await getCaseByNumber(data.caseNumber);
+    return { donationTotal: rescueCase?.donationTotal ?? 0 };
+  }
+  if (data.status !== "PENDING") {
+    throw new Error("สถานะรายการนี้ไม่สามารถอนุมัติได้");
+  }
+
+  const rescueCase = await getCaseByNumber(data.caseNumber as string);
+  if (!rescueCase) throw new Error("ไม่พบเคส");
+
+  const now = new Date();
+  const amount = Number(data.amount) || 0;
+  const donationTotal = (rescueCase.donationTotal ?? 0) + amount;
+
+  await ref.update({
+    status: "VERIFIED",
+    verifyMethod: "clinic",
+    verifiedAt: Timestamp.fromDate(now),
+  });
   await db.collection("cases").doc(rescueCase.id).update({
-    donationTotal: newTotal,
+    donationTotal,
     updatedAt: Timestamp.fromDate(now),
   });
 
-  return { donationTotal: newTotal, donationGoal: goal };
+  return { donationTotal };
 }

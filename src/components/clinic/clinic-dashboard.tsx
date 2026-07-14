@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getClinicSession } from "@/components/clinic/clinic-login-form";
+import { ClinicPendingDonations } from "@/components/clinic/clinic-pending-donations";
 import {
   ANIMAL_CONDITIONS,
   CASE_STATUS_FLOW,
@@ -440,6 +441,18 @@ export function ClinicDashboard() {
               ไม่มีเคสใหม่รอรับ — ระบบพร้อมรับเคสถัดไป
             </div>
           )}
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">สลิปบริจาครอบยืนยัน</CardTitle>
+              <CardDescription>
+                ดูสลิปแล้วกดยืนยัน — ยอดบริจาคในเคสจะขึ้นหลังคลินิกกดเท่านั้น
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClinicPendingDonations />
+            </CardContent>
+          </Card>
 
           {/* KPI — 5 ตัว มีความหมายชัด */}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

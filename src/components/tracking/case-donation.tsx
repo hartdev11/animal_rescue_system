@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Image from "next/image";
+import { Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PROMPTPAY_ID } from "@/lib/constants";
@@ -15,6 +17,12 @@ interface CaseDonationProps {
   onDonated: (newTotal: number) => void;
 }
 
+function promptPayQrUrl(amount: number) {
+  const id = PROMPTPAY_ID.replace(/\D/g, "");
+  const baht = Math.max(1, Math.round(amount * 100) / 100);
+  return `https://promptpay.io/${id}/${baht.toFixed(2)}.png`;
+}
+
 export function CaseDonation({
   caseNumber,
   goal,
@@ -27,33 +35,62 @@ export function CaseDonation({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
+
+  const qrUrl = useMemo(() => promptPayQrUrl(amount), [amount]);
 
   if (closed) return null;
 
   const percent = goal > 0 ? Math.min(100, Math.round((total / goal) * 100)) : 0;
 
+  const onPickSlip = (file: File | null) => {
+    setSlipFile(file);
+    setError(null);
+    if (slipPreview) URL.revokeObjectURL(slipPreview);
+    setSlipPreview(file ? URL.createObjectURL(file) : null);
+  };
+
   const submit = async () => {
+    if (!slipFile) {
+      setError("กรุณาอัปโหลดสลิปหลังโอนเงินแล้ว — คลินิกจะเป็นผู้ตรวจยืนยัน");
+      return;
+    }
+    if (amount < 1) {
+      setError("จำนวนเงินไม่ถูกต้อง");
+      return;
+    }
+
     setLoading(true);
     setMsg(null);
+    setError(null);
     try {
+      const form = new FormData();
+      form.append("amount", String(amount));
+      if (donorName.trim()) form.append("donorName", donorName.trim());
+      form.append("slip", slipFile);
+
       const res = await fetch(
         `/api/cases/${encodeURIComponent(caseNumber)}/donate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount,
-            donorName: donorName.trim() || undefined,
-          }),
-        }
+        { method: "POST", body: form }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message ?? "บันทึกไม่สำเร็จ");
-      onDonated(data.donationTotal);
+      if (!res.ok) throw new Error(data.error?.message ?? "ยืนยันไม่สำเร็จ");
+
+      if (data.status === "VERIFIED") {
+        onDonated(data.donationTotal);
+        setMsg(data.message ?? "ขอบคุณที่บริจาค!");
+      } else {
+        setMsg(
+          data.message ??
+            "ส่งสลิปแล้ว รอคลินิกตรวจยืนยัน — ยอดจะขึ้นเมื่อคลินิกกดยืนยันเท่านั้น"
+        );
+      }
       setOpen(false);
-      setMsg("ขอบคุณสำหรับการบริจาค!");
+      onPickSlip(null);
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
+      setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
       setLoading(false);
     }
@@ -61,7 +98,7 @@ export function CaseDonation({
 
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
-      <h2 className="text-lg font-bold text-amber-900">💰 ช่วยบริจาคค่ารักษา</h2>
+      <h2 className="text-lg font-bold text-amber-900">ช่วยบริจาคค่ารักษา</h2>
       <p className="mt-1 text-sm text-amber-800">
         ได้รับแล้ว{" "}
         <strong>{total.toLocaleString()}</strong> / {goal.toLocaleString()} บาท (
@@ -74,6 +111,10 @@ export function CaseDonation({
         />
       </div>
 
+      <p className="mt-3 text-xs text-amber-800">
+        โอนแล้วอัปโหลดสลิป — ยอดจะขึ้นเมื่อคลินิกกดยืนยันเท่านั้น (กดยืนยันเองไม่ได้)
+      </p>
+
       {msg && <p className="mt-3 text-sm font-medium text-emerald-700">{msg}</p>}
 
       {!open ? (
@@ -82,11 +123,11 @@ export function CaseDonation({
           className="mt-4 w-full bg-amber-600 hover:bg-amber-700"
           onClick={() => setOpen(true)}
         >
-          บริจาค
+          บริจาคด้วยพร้อมเพย์
         </Button>
       ) : (
         <div className="mt-4 space-y-3 rounded-lg border border-amber-300 bg-white p-4">
-          <p className="text-sm font-medium">เลือกจำนวน (บาท)</p>
+          <p className="text-sm font-medium">1) เลือกจำนวน (บาท)</p>
           <div className="flex flex-wrap gap-2">
             {AMOUNTS.map((n) => (
               <button
@@ -111,36 +152,88 @@ export function CaseDonation({
             onChange={(e) => setAmount(Number(e.target.value) || 0)}
           />
 
-          <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-            <p className="font-medium">โอนผ่านพร้อมเพย์</p>
+          <div className="rounded-lg bg-amber-50 p-3 text-center text-sm text-amber-900">
+            <p className="font-medium">2) สแกน QR พร้อมเพย์แล้วโอน</p>
             <p className="mt-1 font-mono text-base">{PROMPTPAY_ID}</p>
-            <p className="mt-2 text-xs text-amber-700">
-              โอน {amount.toLocaleString()} บาท แล้วกดยืนยันด้านล่าง
+            <p className="text-xs text-amber-700">
+              จำนวน {amount.toLocaleString()} บาท
             </p>
+            {amount >= 1 && (
+              <div className="relative mx-auto mt-3 h-44 w-44 overflow-hidden rounded-lg border bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrUrl}
+                  alt="PromptPay QR"
+                  className="h-full w-full object-contain p-2"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">3) อัปโหลดสลิปหลังโอน</p>
+            <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-amber-400 bg-amber-50/50 px-4 py-6 text-sm text-amber-900 hover:bg-amber-50">
+              <Upload className="h-5 w-5" />
+              <span>{slipFile ? slipFile.name : "เลือกรูปสลิปการโอน"}</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onPickSlip(e.target.files?.[0] ?? null)}
+              />
+            </label>
+            {slipPreview && (
+              <div className="relative mx-auto h-40 w-28 overflow-hidden rounded border">
+                <Image
+                  src={slipPreview}
+                  alt="สลิป"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
           </div>
 
           <Input
-            placeholder="ชื่อ (ไม่บังคับ)"
+            placeholder="ชื่อผู้บริจาค (ไม่บังคับ)"
             value={donorName}
             onChange={(e) => setDonorName(e.target.value)}
           />
+
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                onPickSlip(null);
+                setError(null);
+              }}
             >
               ยกเลิก
             </Button>
             <Button
               type="button"
               className="flex-1 bg-amber-600 hover:bg-amber-700"
-              disabled={loading || amount < 1}
-              onClick={submit}
+              disabled={loading || amount < 1 || !slipFile}
+              onClick={() => void submit()}
             >
-              {loading ? "กำลังบันทึก..." : "ยืนยันว่าโอนแล้ว"}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังส่งสลิป...
+                </>
+              ) : (
+                "ส่งสลิปให้คลินิกตรวจ"
+              )}
             </Button>
           </div>
         </div>

@@ -15,6 +15,19 @@ export interface ClinicSession {
   province: string;
 }
 
+const sessionListeners = new Set<() => void>();
+
+function emitClinicSessionChange() {
+  sessionListeners.forEach((listener) => listener());
+}
+
+export function subscribeClinicSession(listener: () => void) {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+}
+
 export function getClinicSession(): ClinicSession | null {
   if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem(CLINIC_SESSION_KEY);
@@ -26,12 +39,24 @@ export function getClinicSession(): ClinicSession | null {
   }
 }
 
+/** สำหรับ useSyncExternalStore — คืนสตริงคงที่เมื่อค่าเดิม */
+export function getClinicSessionSnapshot(): string {
+  const session = getClinicSession();
+  return session ? JSON.stringify(session) : "";
+}
+
+export function getClinicSessionServerSnapshot(): string {
+  return "";
+}
+
 export function setClinicSession(session: ClinicSession) {
   sessionStorage.setItem(CLINIC_SESSION_KEY, JSON.stringify(session));
+  emitClinicSessionChange();
 }
 
 export function clearClinicSession() {
   sessionStorage.removeItem(CLINIC_SESSION_KEY);
+  emitClinicSessionChange();
 }
 
 export function ClinicLoginForm() {

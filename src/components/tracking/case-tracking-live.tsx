@@ -11,8 +11,8 @@ import { CASE_STATUS_STYLES } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import type { CaseStatus, CaseTimelineEvent } from "@/types";
 
-const POLL_INTERVAL_MS = 3000;
-const POLL_INTERVAL_CLOSED_MS = 15000;
+const POLL_INTERVAL_MS = 15_000;
+const POLL_INTERVAL_CLOSED_MS = 60_000;
 
 interface SerializedTimelineEvent {
   id: string;
@@ -131,8 +131,11 @@ export function CaseTrackingLive({
 
   useEffect(() => {
     let cancelled = false;
+    let intervalId = 0;
 
     const poll = async () => {
+      // ไม่โหลดซ้ำเมื่อแท็บถูกซ่อน — ลด log / โหลดเซิร์ฟเวอร์
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const data = await fetchCaseUpdates();
         if (cancelled || !data) return;
@@ -142,17 +145,32 @@ export function CaseTrackingLive({
       }
     };
 
-    void poll();
+    const startInterval = () => {
+      window.clearInterval(intervalId);
+      const ms =
+        caseData.status === "CLOSED" ? POLL_INTERVAL_CLOSED_MS : POLL_INTERVAL_MS;
+      intervalId = window.setInterval(() => {
+        void poll();
+      }, ms);
+    };
 
-    const interval =
-      caseData.status === "CLOSED" ? POLL_INTERVAL_CLOSED_MS : POLL_INTERVAL_MS;
-    const id = window.setInterval(() => {
-      void poll();
-    }, interval);
+    // มีข้อมูลจาก SSR แล้ว — ไม่ต้องดึงทันที รอช่วงถัดไป
+    startInterval();
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        window.clearInterval(intervalId);
+      } else {
+        void poll();
+        startInterval();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [fetchCaseUpdates, applyUpdates, caseData.status]);
 
@@ -183,7 +201,7 @@ export function CaseTrackingLive({
       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <div className="flex items-center gap-1.5">
           <Radio className="h-3.5 w-3.5 shrink-0 animate-pulse text-emerald-500" />
-          <span>อัปเดตอัตโนมัติ — ไม่ต้องรีเฟรช</span>
+          <span>อัปเดตอัตโนมัติทุก 15 วินาที</span>
         </div>
         {lastSyncedAt && (
           <span className="text-muted-foreground/70 sm:before:mr-2 sm:before:content-['•']">

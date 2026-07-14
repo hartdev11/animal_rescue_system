@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/constants";
 import {
-  getClinicSession,
   clearClinicSession,
+  getClinicSessionServerSnapshot,
+  getClinicSessionSnapshot,
+  subscribeClinicSession,
   type ClinicSession,
 } from "@/components/clinic/clinic-login-form";
 
@@ -17,6 +19,15 @@ const navItems = [
   { href: "/clinic/animals", label: "หาบ้านให้สัตว์", exact: true },
 ];
 
+function parseSession(snapshot: string): ClinicSession | null {
+  if (!snapshot) return null;
+  try {
+    return JSON.parse(snapshot) as ClinicSession;
+  } catch {
+    return null;
+  }
+}
+
 export default function ClinicLayout({
   children,
 }: {
@@ -24,20 +35,30 @@ export default function ClinicLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [session, setSession] = useState<ClinicSession | null>(null);
-  const [ready, setReady] = useState(false);
-
   const isLoginPage = pathname === "/clinic/login";
 
-  useEffect(() => {
-    const s = getClinicSession();
-    setSession(s);
-    setReady(true);
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
-    if (!isLoginPage && !s) {
+  const sessionSnapshot = useSyncExternalStore(
+    subscribeClinicSession,
+    getClinicSessionSnapshot,
+    getClinicSessionServerSnapshot
+  );
+  const session = useMemo(
+    () => parseSession(sessionSnapshot),
+    [sessionSnapshot]
+  );
+
+  useEffect(() => {
+    if (!isClient || isLoginPage) return;
+    if (!session) {
       router.replace("/clinic/login");
     }
-  }, [isLoginPage, router, pathname]);
+  }, [isClient, isLoginPage, session, router]);
 
   const handleLogout = () => {
     clearClinicSession();
@@ -48,7 +69,7 @@ export default function ClinicLayout({
     return <>{children}</>;
   }
 
-  if (!ready) {
+  if (!isClient) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
@@ -73,18 +94,18 @@ export default function ClinicLayout({
               ? pathname === item.href
               : pathname.startsWith(item.href);
             return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "block rounded-lg px-4 py-2 text-sm transition",
-                active
-                  ? "bg-emerald-100 font-medium text-emerald-800"
-                  : "text-gray-600 hover:bg-gray-100"
-              )}
-            >
-              {item.label}
-            </Link>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "block rounded-lg px-4 py-2 text-sm transition",
+                  active
+                    ? "bg-emerald-100 font-medium text-emerald-800"
+                    : "text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                {item.label}
+              </Link>
             );
           })}
         </nav>
