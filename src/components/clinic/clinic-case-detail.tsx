@@ -256,10 +256,12 @@ export function ClinicCaseDetail({ caseNumber }: ClinicCaseDetailProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">รายละเอียดเคส</h1>
-          <p className="font-mono text-emerald-700">{caseData.caseNumber}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold sm:text-2xl">รายละเอียดเคส</h1>
+          <p className="break-all font-mono text-sm text-emerald-700 sm:text-base">
+            {caseData.caseNumber}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <CaseStatusBadge status={caseData.status} className="text-sm px-3 py-1" />

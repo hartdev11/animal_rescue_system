@@ -74,10 +74,10 @@ export function ClinicLoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-lg">
+    <div className="w-full max-w-md rounded-2xl border bg-white p-5 shadow-lg sm:p-8">
       <div className="text-center">
         <div className="text-5xl">🏥</div>
-        <h1 className="mt-4 text-2xl font-bold">พอร์ทัลคลินิก</h1>
+        <h1 className="mt-4 text-xl font-bold sm:text-2xl">พอร์ทัลคลินิก</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           เข้าสู่ระบบเพื่อรับเคสและอัปเดตสถานะ
         </p>

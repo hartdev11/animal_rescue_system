@@ -514,12 +514,12 @@ export function ClinicAnimalForm({
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3 border-t pt-6">
-        <Button type="submit" disabled={submitting}>
+      <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:flex-wrap">
+        <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {mode === "edit" ? "บันทึกและเผยแพร่" : "ลงทะเบียนรับเลี้ยง"}
         </Button>
-        <Button type="button" variant="outline" asChild>
+        <Button type="button" variant="outline" asChild className="w-full sm:w-auto">
           <Link href="/clinic/animals">ยกเลิก</Link>
         </Button>
         {mode === "edit" && (
@@ -528,6 +528,7 @@ export function ClinicAnimalForm({
             variant="secondary"
             disabled={submitting}
             onClick={markAdopted}
+            className="w-full sm:w-auto"
           >
             ทำเครื่องหมายว่าได้เจ้าของแล้ว
           </Button>

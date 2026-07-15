@@ -178,26 +178,6 @@ export function CaseTrackingLive({
 
   return (
     <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
-      {clinicName && clinicLineId && (
-        <CaseLineContact
-          caseNumber={caseNumber}
-          clinicName={clinicName}
-          lineId={clinicLineId}
-          speciesLabel={speciesLabel}
-          reportedAt={caseData.createdAt}
-        />
-      )}
-
-      <CaseDonation
-        caseNumber={caseNumber}
-        goal={caseData.donationGoal}
-        total={caseData.donationTotal}
-        closed={caseData.status === "CLOSED"}
-        onDonated={(newTotal) =>
-          setCaseData((prev) => ({ ...prev, donationTotal: newTotal }))
-        }
-      />
-
       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <div className="flex items-center gap-1.5">
           <Radio className="h-3.5 w-3.5 shrink-0 animate-pulse text-emerald-500" />
@@ -228,6 +208,16 @@ export function CaseTrackingLive({
       </div>
 
       <CaseTimeline events={timeline} highlightLatest />
+
+      {clinicName && clinicLineId && (
+        <CaseLineContact
+          caseNumber={caseNumber}
+          clinicName={clinicName}
+          lineId={clinicLineId}
+          speciesLabel={speciesLabel}
+          reportedAt={caseData.createdAt}
+        />
+      )}
 
       {imageUrls.length > 0 && (
         <div>
@@ -262,6 +252,17 @@ export function CaseTrackingLive({
           <p className="font-medium">{caseData.description}</p>
         </div>
       </div>
+
+      {/* บริจาคอยู่ท้ายสุด — ไม่บังคับ ดูสถานะได้โดยไม่ต้องบริจาค */}
+      <CaseDonation
+        caseNumber={caseNumber}
+        goal={caseData.donationGoal}
+        total={caseData.donationTotal}
+        closed={caseData.status === "CLOSED"}
+        onDonated={(newTotal) =>
+          setCaseData((prev) => ({ ...prev, donationTotal: newTotal }))
+        }
+      />
     </div>
   );
 }

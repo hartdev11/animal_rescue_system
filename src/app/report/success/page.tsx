@@ -38,10 +38,10 @@ export default async function ReportSuccessPage({ searchParams }: SuccessPagePro
                 href={`/case/${caseNumber}`}
                 className="mt-6 inline-block w-full rounded-lg bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700 sm:w-auto"
               >
-                ติดตามเคส & บริจาคช่วยค่ารักษา
+                ติดตามสถานะเคส
               </Link>
               <p className="mt-3 text-sm text-muted-foreground">
-                กดปุ่มด้านบนเพื่อดูสถานะและบริจาคผ่านพร้อมเพย์
+                ดูสถานะได้ทันที — บริจาคเป็นทางเลือก อยู่ด้านล่างของหน้าติดตามเคส
               </p>
             </>
           )}

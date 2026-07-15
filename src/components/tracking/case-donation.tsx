@@ -100,6 +100,9 @@ export function CaseDonation({
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
       <h2 className="text-lg font-bold text-amber-900">ช่วยบริจาคค่ารักษา</h2>
       <p className="mt-1 text-sm text-amber-800">
+        ไม่บังคับ — ดูสถานะเคสได้ปกติโดยไม่ต้องบริจาค
+      </p>
+      <p className="mt-2 text-sm text-amber-800">
         ได้รับแล้ว{" "}
         <strong>{total.toLocaleString()}</strong> / {goal.toLocaleString()} บาท (
         {percent}%)
@@ -112,7 +115,7 @@ export function CaseDonation({
       </div>
 
       <p className="mt-3 text-xs text-amber-800">
-        โอนแล้วอัปโหลดสลิป — ยอดจะขึ้นเมื่อคลินิกกดยืนยันเท่านั้น (กดยืนยันเองไม่ได้)
+        ถ้าอยากช่วย: โอนแล้วอัปโหลดสลิป — ยอดขึ้นเมื่อคลินิกกดยืนยัน
       </p>
 
       {msg && <p className="mt-3 text-sm font-medium text-emerald-700">{msg}</p>}

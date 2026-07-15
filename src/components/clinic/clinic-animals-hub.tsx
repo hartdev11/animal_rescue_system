@@ -31,23 +31,23 @@ export function ClinicAnimalsHub() {
   }, [tabParam]);
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">หาบ้านให้สัตว์ (คลินิก)</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">หาบ้านให้สัตว์ (คลินิก)</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           เคสที่รักษาเสร็จและส่งศูนย์พักพิง → รูปดึงมาอัตโนมัติ → กรอกรายละเอียด →
           แสดงในหน้าสาธารณะ
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b pb-1">
+      <div className="-mx-1 flex gap-1 overflow-x-auto border-b px-1 pb-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
-              "rounded-t-lg px-4 py-2 text-sm font-medium transition",
+              "shrink-0 rounded-t-lg px-3 py-2 text-sm font-medium transition sm:px-4",
               tab === t.id
                 ? "border-b-2 border-emerald-600 text-emerald-700"
                 : "text-muted-foreground hover:text-foreground"

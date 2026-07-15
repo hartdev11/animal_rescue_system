@@ -121,23 +121,29 @@ export function ClinicCasesList() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">เคสทั้งหมด</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold sm:text-2xl">เคสทั้งหมด</h1>
+          <p className="text-sm text-muted-foreground">
             {session.clinicName}
             {showAllProvinces
               ? " — แสดงทุกจังหวัด"
               : ` — จังหวัด${session.province}`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadCases} disabled={loading}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadCases}
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             รีเฟรช
           </Button>
           <select
-            className="rounded-md border px-3 py-2 text-sm"
+            className="h-9 w-full rounded-md border px-3 py-2 text-sm sm:w-auto"
             value={filter}
             onChange={(e) => setFilter(e.target.value as CaseStatus | "ALL")}
           >
@@ -191,9 +197,9 @@ export function ClinicCasesList() {
               <Link
                 key={c.caseNumber}
                 href={`/clinic/cases/${c.caseNumber}`}
-                className="flex gap-4 rounded-xl border bg-white p-4 transition hover:border-emerald-300 hover:shadow-md"
+                className="flex gap-3 rounded-xl border bg-white p-3 transition hover:border-emerald-300 hover:shadow-md sm:gap-4 sm:p-4"
               >
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border sm:h-20 sm:w-20">
                   {cover ? (
                     <Image
                       src={cover}

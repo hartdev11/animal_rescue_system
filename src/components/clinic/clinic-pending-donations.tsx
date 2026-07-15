@@ -135,7 +135,7 @@ export function ClinicPendingDonations() {
           <Button
             type="button"
             size="sm"
-            className="bg-amber-600 hover:bg-amber-700"
+            className="w-full bg-amber-600 hover:bg-amber-700 sm:w-auto"
             disabled={actingId === d.id}
             onClick={() => void approve(d.id)}
           >

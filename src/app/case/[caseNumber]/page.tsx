@@ -44,12 +44,6 @@ export default async function CaseTrackingPage({ params }: CaseTrackingPageProps
         <p className="mt-1 break-all font-mono text-sm text-emerald-700 sm:text-base">
           {caseNumber}
         </p>
-        {rescueCase && rescueCase.status !== "CLOSED" && (
-          <p className="mt-2 text-sm text-amber-800">
-            เงินบริจาคช่วยค่ารักษาอยู่ด้านล่าง — หรือทัก LINE คลินิกได้ถ้าต้องการติดต่อด่วน
-          </p>
-        )}
-
         {rescueCase ? (
           <CaseTrackingLive
             caseNumber={caseNumber}

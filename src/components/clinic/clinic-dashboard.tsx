@@ -375,12 +375,18 @@ export function ClinicDashboard() {
               )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={loadDashboard} disabled={loading}>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadDashboard}
+              disabled={loading}
+              className="flex-1 sm:flex-none"
+            >
               <RefreshCw className={cn("mr-1.5 h-4 w-4", loading && "animate-spin")} />
               รีเฟรช
             </Button>
-            <Button size="sm" asChild>
+            <Button size="sm" asChild className="flex-1 sm:flex-none">
               <Link href="/clinic/cases">
                 <ClipboardList className="mr-1.5 h-4 w-4" />
                 รายการเคส
@@ -414,7 +420,7 @@ export function ClinicDashboard() {
         <>
           {/* Action alert — สิ่งสำคัญสุด อยู่บนสุด */}
           {data.stats.newCases > 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <div className="rounded-full bg-amber-100 p-2">
                   <AlertCircle className="h-5 w-5 text-amber-700" />
@@ -428,7 +434,11 @@ export function ClinicDashboard() {
                   </p>
                 </div>
               </div>
-              <Button size="sm" asChild className="bg-amber-600 hover:bg-amber-700">
+              <Button
+                size="sm"
+                asChild
+                className="w-full bg-amber-600 hover:bg-amber-700 sm:w-auto"
+              >
                 <Link href={casesFilterHref("NEW")}>
                   ไปรับเคส
                   <ArrowRight className="ml-1.5 h-4 w-4" />
